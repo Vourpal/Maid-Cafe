@@ -76,7 +76,7 @@ def users():
 
 
 @app.route("/users/<int:user_id>", methods=["GET", "PATCH", "DELETE"])
-def users(user_id):
+def users_collection(user_id):
     conn = connect_db()
     cur = conn.cursor()
     try:
@@ -119,7 +119,7 @@ def users(user_id):
 
 # TODO: add pagination eventually
 @app.route("/events", methods=["GET", "POST"])
-def events():
+def events_collection():
     conn = connect_db()
     cur = conn.cursor()
     try:
@@ -147,7 +147,7 @@ def events():
 
 # TODO: add a finally clause to close db connection
 @app.route("/events/<int:event_id>", methods=["GET", "PATCH", "DELETE"])
-def events(event_id):
+def events_detail(event_id):
     conn = connect_db()
     cur = conn.cursor()
     try:
@@ -176,4 +176,4 @@ def events(event_id):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)

@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+  backend:
+    build: ./server
+    container_name: maid-backend
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./server:/app
+    environment:
+      - FLASK_ENV=development
+
+  frontend:
+    build: ./Client
+    container_name: maid-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./Client:/app
+      - /app/node_modules #this part is important so that it doesnt use my nodejs i guess?
+    environment:
+      - NODE_ENV=development
