@@ -261,7 +261,7 @@ def get_tasks_for_event(db, event_id: int):
         ))
     return tasks
 
-
+#TODO: fix this later to be like the other update functions
 def update_task(db, task_id: int, task: Task):
     db.execute("""
         UPDATE tasks

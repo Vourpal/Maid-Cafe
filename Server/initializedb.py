@@ -1,7 +1,7 @@
 from db import connect_db
 
 
-def initialize_user_table(db):
+def initialize_user_table(db, conn):
     db.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
@@ -14,10 +14,10 @@ def initialize_user_table(db):
             active BOOLEAN NOT NULL DEFAULT TRUE
         );
     """)
-    db.commit()
+    conn.commit()
 
 
-def initialize_event_table(db):
+def initialize_event_table(db, conn):
     db.execute("""
         CREATE TABLE IF NOT EXISTS events (
             id SERIAL PRIMARY KEY,
@@ -31,10 +31,10 @@ def initialize_event_table(db):
             FOREIGN KEY (created_by) REFERENCES users(id)
         );
     """)
-    db.commit()
+    conn.commit()
 
 
-def initialize_attendee_table(db):
+def initialize_attendee_table(db, conn):
     db.execute("""
     CREATE TABLE IF NOT EXISTS attendances (
     id SERIAL PRIMARY KEY,
@@ -46,10 +46,10 @@ def initialize_attendee_table(db):
     FOREIGN KEY (event_id) REFERENCES events(id)
     );
     """)
-    db.commit()
+    conn.commit()
 
 
-def initialize_tasks_table(db):
+def initialize_tasks_table(db, conn):
     db.execute("""
     CREATE TABLE IF NOT EXISTS tasks (
     id SERIAL PRIMARY KEY,
@@ -65,7 +65,7 @@ def initialize_tasks_table(db):
     FOREIGN KEY (event_id) REFERENCES events(id)
     );
     """)
-    db.commit()
+    conn.commit()
 
 
 if __name__ == "__main__":
@@ -75,7 +75,7 @@ if __name__ == "__main__":
     else:
         raise Exception("Database connection failed")
 
-    initialize_user_table(cur)
-    initialize_event_table(cur)
-    initialize_attendee_table(cur)
-    initialize_tasks_table(cur)
+    initialize_user_table(cur, conn)
+    initialize_event_table(cur, conn)
+    initialize_attendee_table(cur, conn)
+    initialize_tasks_table(cur, conn)
