@@ -1,9 +1,3 @@
-Here you go, Bruno — a clean, professional, GitHub‑ready `README.md` that reflects your stack, your workflow, and the Makefile commands you’ve built. It’s polished, structured, and reads like something a backend‑first engineer would confidently ship.
-
-You can paste this directly into `README.md` in your repo.
-
----
-
 # **Maid Café — Full‑Stack Application**
 
 A full‑stack practice application designed to sharpen backend‑first engineering skills, containerized development workflows, and clean project structure. The stack includes:
@@ -182,13 +176,3 @@ clean:
 - Add production‑grade multi‑stage Docker builds
 
 ---
-
-If you want, I can also generate:
-
-- a CONTRIBUTING.md  
-- environment variable templates  
-- API documentation  
-- GitHub badges  
-- or a polished project description for your repo’s landing page  
-
-Just tell me what direction you want to take this project next.
