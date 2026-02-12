@@ -1,7 +1,7 @@
 from db import connect_db
 
-def initialize_user_table(db):
 
+def initialize_user_table(db):
     db.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
@@ -17,6 +17,57 @@ def initialize_user_table(db):
     db.commit()
 
 
+def initialize_event_table(db):
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS events (
+            id SERIAL PRIMARY KEY,
+            title VARCHAR(100) NOT NULL,
+            description VARCHAR(255),
+            start_date TIMESTAMP NOT NULL,
+            end_date TIMESTAMP NOT NULL,
+            created_by INTEGER NOT NULL,
+            location VARCHAR(100),
+            max_attendees INT,
+            FOREIGN KEY (created_by) REFERENCES users(id)
+        );
+    """)
+    db.commit()
+
+
+def initialize_attendee_table(db):
+    db.execute("""
+    CREATE TABLE IF NOT EXISTS attendances (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    event_id INTEGER NOT NULL,
+    status VARCHAR(100) NOT NULL,
+    notes VARCHAR(255) NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (event_id) REFERENCES events(id)
+    );
+    """)
+    db.commit()
+
+
+def initialize_tasks_table(db):
+    db.execute("""
+    CREATE TABLE IF NOT EXISTS tasks (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(100) NOT NULL,
+    description VARCHAR(255),
+    assigned_to INTEGER,
+    created_by INTEGER NOT NULL,
+    due_date TIMESTAMP,
+    event_id INTEGER,
+    completed BOOLEAN NOT NULL DEFAULT FALSE,
+    FOREIGN KEY (created_by) REFERENCES users(id),
+    FOREIGN KEY (assigned_to) REFERENCES users(id),
+    FOREIGN KEY (event_id) REFERENCES events(id)
+    );
+    """)
+    db.commit()
+
+
 if __name__ == "__main__":
     conn = connect_db()
     if conn:
@@ -25,3 +76,6 @@ if __name__ == "__main__":
         raise Exception("Database connection failed")
 
     initialize_user_table(cur)
+    initialize_event_table(cur)
+    initialize_attendee_table(cur)
+    initialize_tasks_table(cur)
