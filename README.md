@@ -176,13 +176,3 @@ clean:
 - Add production‑grade multi‑stage Docker builds
 
 ---
-
-If you want, I can also generate:
-
-- a CONTRIBUTING.md  
-- environment variable templates  
-- API documentation  
-- GitHub badges  
-- or a polished project description for your repo’s landing page  
-
-Just tell me what direction you want to take this project next.
