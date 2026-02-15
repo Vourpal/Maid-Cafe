@@ -31,6 +31,10 @@ frontend:
 dev:
 	$(COMPOSE) up
 
+# Docker watch mode
+watch:
+	$(COMPOSE) watch
+
 # Clean up containers, images, networks
 clean:
 	docker system prune -af

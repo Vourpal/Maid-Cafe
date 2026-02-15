@@ -1,18 +1,34 @@
 from flask import Flask, request
 import bcrypt
 
-from db import connect_db, get_event_by_id, update_task, update_event, Event, delete_event, EventUpdate, get_all_events, \
-    create_event, get_user_by_id, UserBase, update_user, UserAuthorization, UserUpdate, delete_user, create_user
+from db import (
+    connect_db,
+    get_event_by_id,
+    get_events_paginated,
+    get_total_events,
+    update_event,
+    Event,
+    delete_event,
+    EventUpdate,
+    create_event,
+    get_user_by_id,
+    update_user,
+    UserAuthorization,
+    UserUpdate,
+    delete_user,
+    create_user,
+)
 
 app = Flask(__name__)
 
-
+#TODO1: JWT authentication
+#TODO2: Blueprints (modular routing)
+#TODO3: Filterings + sorting + advanced pagination
+#TODO4: Environment variables + config management
+#TODO5: swagger docs
+#TODO6: Pytest
 def success_response(data, status=200):
-    return {
-        "success": True,
-        "data": data,
-        "error": None
-    }, status
+    return {"success": True, "data": data, "error": None}, status
 
 
 class APIError(Exception):
@@ -27,10 +43,7 @@ def handle_api_error(err):
     return {
         "success": False,
         "data": None,
-        "error": {
-            "code": err.code,
-            "message": err.message
-        }
+        "error": {"code": err.code, "message": err.message},
     }, err.status
 
 
@@ -39,10 +52,7 @@ def handle_unexpected_error(err):
     return {
         "success": False,
         "data": None,
-        "error": {
-            "code": "INTERNAL_SERVER_ERROR",
-            "message": "Something went wrong"
-        }
+        "error": {"code": "INTERNAL_SERVER_ERROR", "message": "Something went wrong"},
     }, 500
 
 
@@ -61,8 +71,7 @@ def users():
 
         # Hash the password
         hashed_pw = bcrypt.hashpw(
-            new_user_data.password.encode("utf-8"),
-            bcrypt.gensalt()
+            new_user_data.password.encode("utf-8"), bcrypt.gensalt()
         )
         new_user_data.password = hashed_pw.decode("utf-8")
 
@@ -86,17 +95,13 @@ def users_collection(user_id):
                 raise APIError("USER_NOT_FOUND", f"USER {user_id} does not exist", 404)
             return success_response(user.model_dump(), 200)
 
-
         elif request.method == "PATCH":
-
             data = request.get_json()
             user_data = UserUpdate(**data)
             # If password is being updated, hash it
             if user_data.password is not None:
                 hashed_pw = bcrypt.hashpw(
-                    user_data.password.encode("utf-8"),
-                    bcrypt.gensalt()
-
+                    user_data.password.encode("utf-8"), bcrypt.gensalt()
                 )
                 user_data.password = hashed_pw.decode("utf-8")
             updated_user = update_user(cur, user_id, user_data)
@@ -116,21 +121,30 @@ def users_collection(user_id):
     finally:
         conn.close()
 
-
-# TODO: add pagination eventually
 @app.route("/events", methods=["GET", "POST"])
 def events_collection():
     conn = connect_db()
     cur = conn.cursor()
+
     try:
         if request.method == "GET":
-            events = get_all_events(cur)
+            page = int(request.args.get("page", 1))
+            quantity = int(request.args.get("quantity", 10))
+            offset = (page - 1) * quantity
+
+            events = get_events_paginated(cur, quantity, offset)
+            total = get_total_events(cur)
 
             if len(events) == 0:
                 raise APIError("EVENTS_NOT_FOUND", "No events found", 404)
 
-            events_data = [event.model_dump() for event in events]
-            return success_response(events_data, 200)
+            return success_response({
+                "page": page,
+                "quantity": quantity,
+                "count": len(events),
+                "total": total,
+                "events": [event.model_dump() for event in events]
+            }, 200)
 
         elif request.method == "POST":
             data = request.get_json()
@@ -144,8 +158,6 @@ def events_collection():
     finally:
         conn.close()
 
-
-# TODO: add a finally clause to close db connection
 @app.route("/events/<int:event_id>", methods=["GET", "PATCH", "DELETE"])
 def events_detail(event_id):
     conn = connect_db()
@@ -154,7 +166,9 @@ def events_detail(event_id):
         if request.method == "GET":
             event = get_event_by_id(cur, event_id)
             if event is None:
-                raise APIError("EVENT_NOT_FOUND", f"EVENT {event_id} does not exist", 404)
+                raise APIError(
+                    "EVENT_NOT_FOUND", f"EVENT {event_id} does not exist", 404
+                )
             return success_response(event.model_dump(), 200)
 
         elif request.method == "PATCH":
@@ -167,7 +181,9 @@ def events_detail(event_id):
         elif request.method == "DELETE":
             deleted_id = delete_event(cur, event_id)
             if deleted_id is None:
-                raise APIError("EVENT_NOT_FOUND", f"EVENT {event_id} does not exist", 404)
+                raise APIError(
+                    "EVENT_NOT_FOUND", f"EVENT {event_id} does not exist", 404
+                )
             conn.commit()
             return success_response({"deleted": deleted_id}, 200)
 

@@ -21,3 +21,9 @@ services:
       - /app/node_modules #this part is important so that it doesnt use my nodejs i guess?
     environment:
       - NODE_ENV=development
+      - WATCHPACK_POLLING=true       # <- forces Next.js to poll
+      - CHOKIDAR_USEPOLLING=true     # <- ensures underlying watcher polls
+      - CHOKIDAR_INTERVAL=100
+      - NEXT_WEBPACK_USEPOLLING=1
+      - NEXT_DISABLE_SWC_WATCHING=1
+  
