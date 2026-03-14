@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Event } from "@/types/event";
+import EventFilters from "./EventFilters";
 type EventCardProps = {
   initialEvents: Event[];
   initialPage: number;
@@ -16,27 +17,11 @@ export default function EventCards({
   const [events, setEvents] = useState<Event[]>(initialEvents);
   const [page, setPage] = useState(initialPage);
   const [loading, setLoading] = useState(false);
-
-  async function fetchEvents(newPage:number, filters?: unknown) {
-    setLoading(true)
-
-    const params = new URLSearchParams({
-        page: newPage.toString(),
-        quantity: "10",
-        
-    })
-
-    const res = await fetch(`http://127.0.0.1:5000/events?${params}`);
-    const data = await res.json();
-
-    setEvents(data.data.events)
-    setPage(newPage)
-    setLoading(false)
-  }
 // should filter be here or in page.tsx?
   return (
     <div>
       <div>
+        <EventFilters/>
         {events.map((event) => (
           <div key={event.id}>
             <h1>{event.title}</h1>

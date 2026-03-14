@@ -9,9 +9,10 @@ import {
 } from "react";
 
 type User = {
-  id: number;
-  name: string;
+  first_name: string;
+  last_name: string;
   email: string;
+  username: string;
 };
 
 type UserContextType = {
@@ -29,7 +30,7 @@ export function UserAuthenticationProvider({
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => { //this is used for auto-login on refresh
-    fetch("http://127.0.0.1:5000/auth/me", {
+    fetch("http://localhost:5000/auth/me", {
       credentials: "include",
     })
       .then(res => res.json())

@@ -1,21 +1,19 @@
-"use client"
+"use client";
+// probably do a toggle for me making it so that all the events are specifically about them.. maybe then add further filters?
+import { useRouter } from "next/navigation";
 
-import { useRouter } from "next/router"
+export default function EventFilters() {
+  const router = useRouter();
 
-export default function EventFilters(){
-
-    const router = useRouter()
-
-    // function
-    return (
-        <div>
-            look i b filtering n shet
-        </div>
-    )
+  // function
+  return (
+    <div>
+      <select>
+        <option value="user">Me</option>
+      </select>
+    </div>
+  );
 }
-
-
-
 
 // "use client";
 

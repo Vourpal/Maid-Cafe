@@ -1,8 +1,10 @@
-from flask import Flask, make_response, request
+from flask import Flask, jsonify, make_response, request
 from flask_cors import CORS
 import bcrypt
+import traceback
 
 from db import (
+    UserRegister,
     connect_db,
     get_event_by_id,
     get_events_paginated,
@@ -23,15 +25,18 @@ from db import (
 from auth import create_token, verify_token
 
 app = Flask(__name__)
-CORS(app, supports_credentials=True)
+CORS(app, supports_credentials=True, origins=[
+    "http://localhost:3000",
+    "http://192.168.4.103:3000"
+])
 
 
-#TODO1: JWT authentication
-#TODO2: Blueprints (modular routing)
-#TODO3: Filterings + sorting + advanced pagination
-#TODO4: Environment variables + config management
-#TODO5: swagger docs
-#TODO6: Pytest
+# TODO1: JWT authentication
+# TODO2: Blueprints (modular routing)
+# TODO3: Filterings + sorting + advanced pagination
+# TODO4: Environment variables + config management
+# TODO5: swagger docs
+# TODO6: Pytest
 def success_response(data, status=200):
     return {"success": True, "data": data, "error": None}, status
 
@@ -54,6 +59,9 @@ def handle_api_error(err):
 
 @app.errorhandler(Exception)
 def handle_unexpected_error(err):
+    print("UNEXPECTED ERROR:", err)
+    traceback.print_exc()  # <-- prints full traceback to console
+
     return {
         "success": False,
         "data": None,
@@ -68,7 +76,7 @@ def home():
 
 @app.route("/auth/login", methods=["POST"])
 def login():
-    conn = connect_db
+    conn = connect_db()
     cur = conn.cursor()
 
     try:
@@ -76,33 +84,47 @@ def login():
         email = data.get("email")
         password = data.get("password")
 
-        user: dict= get_user_by_email(cur, email)
+        user = get_user_by_email(cur, email)
+
+        print("USER:", user)
+        print("HASH:", repr(user.password))
+        print("ENTERED PASSWORD:", password)
 
         if not user:
             raise APIError("INVALID_CREDENTIALS", "invalid user or passowrd", 401)
-        
+
         if not bcrypt.checkpw(password.encode(), user.password.encode()):
             raise APIError("INVALID_CREDENTIALS", "invalid user or passowrd", 401)
-        
+
         token = create_token(user.id)
-        #response needed because you can't set cookie to a normal dict|||
-        response = make_response({
-            "id": user.id,
-            "email": user.email,
-            "name": user.first_name
-        })
+        # response needed because you can't set cookie to a normal dict|||
+        response = make_response(
+            jsonify(
+                {
+                    "success": True,
+                    "data": {
+                        "id": user.id,
+                        "email": user.email,
+                        "name": user.first_name,
+                    },
+                    "error": None,
+                }
+            )
+        )
 
         response.set_cookie(
             "token",
             token,
             httponly=True,
             samesite="Lax",
-            max_age=60*60*24*7 #might need to change this to 1 day (60*60*24)?
+            secure=False, # set to true in production with https
+            max_age=60 * 60 * 24 * 7,  # might need to change this to 1 day (60*60*24)?
         )
         return response
 
     finally:
-        conn.closer()
+        conn.close()
+
 
 @app.route("/auth/me", methods=["GET"])
 def get_current_user():
@@ -110,30 +132,28 @@ def get_current_user():
 
     if not token:
         raise APIError("UNAUTHORIZED", "Not logged in", 401)
-    
-    user_id = verify_token(token) #does this token contain a userid
+
+    user_id = verify_token(token)  # does this token contain a userid
 
     if not user_id:
         raise APIError("UNAUTHORIZED", "Invalid token", 401)
-    
+
     conn = connect_db()
     cur = conn.cursor()
 
     try:
-        user = get_user_by_id(cur, user_id) #does this userid even exist in db?
+        user = get_user_by_id(cur, user_id)  # does this userid even exist in db?
+        print("this is what i look like", success_response(user.model_dump()))
 
         return success_response(user.model_dump())
     finally:
         conn.close()
 
+
 @app.route("/auth/logout", methods=["POST"])
 def logout():
-    response = make_response({
-        "message": "Logged out successfully"
-    })
-
-    response.delete_cookie("token")
-
+    response = make_response({"message": "Logged out successfully"})
+    response.delete_cookie("token", path="/", samesite="Lax")
     return response
 
 
@@ -143,13 +163,24 @@ def users():
     cur = conn.cursor()
     try:
         data = request.get_json()
-        new_user_data = UserAuthorization(**data)
+        reg_data = UserRegister(**data)
+
+        new_user_data = UserAuthorization(
+            first_name=reg_data.first_name,
+            last_name=reg_data.last_name,
+            email=reg_data.email,
+            username=reg_data.username,
+            password=reg_data.password,
+            admin=False,
+            active=True,
+        )
 
         # Hash the password
         hashed_pw = bcrypt.hashpw(
             new_user_data.password.encode("utf-8"), bcrypt.gensalt()
         )
         new_user_data.password = hashed_pw.decode("utf-8")
+        print("REGISTERED PASSWORD:", new_user_data.password)
 
         new_user_id = create_user(cur, new_user_data)
         conn.commit()
@@ -197,6 +228,7 @@ def users_collection(user_id):
     finally:
         conn.close()
 
+
 @app.route("/events", methods=["GET", "POST"])
 def events_collection():
     conn = connect_db()
@@ -208,19 +240,25 @@ def events_collection():
             quantity = int(request.args.get("quantity", 10))
             offset = (page - 1) * quantity
 
-            events = get_events_paginated(cur, quantity, offset)
+            # Filters
+            min_capacity = request.args.get("min_capacity")
+
+            events = get_events_paginated(cur, quantity, offset, min_capacity)
             total = get_total_events(cur)
 
             if len(events) == 0:
                 raise APIError("EVENTS_NOT_FOUND", "No events found", 404)
 
-            return success_response({
-                "page": page,
-                "quantity": quantity,
-                "count": len(events),
-                "total": total,
-                "events": [event.model_dump() for event in events]
-            }, 200)
+            return success_response(
+                {
+                    "page": page,
+                    "quantity": quantity,
+                    "count": len(events),
+                    "total": total,
+                    "events": [event.model_dump() for event in events],
+                },
+                200,
+            )
 
         elif request.method == "POST":
             data = request.get_json()
@@ -233,6 +271,7 @@ def events_collection():
 
     finally:
         conn.close()
+
 
 @app.route("/events/<int:event_id>", methods=["GET", "PATCH", "DELETE"])
 def events_detail(event_id):

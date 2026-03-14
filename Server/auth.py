@@ -9,7 +9,10 @@ def create_token(user_id: int):
         "exp": datetime.datetime.now() + datetime.timedelta(days=1)
     }
 
-    token  = jwt.encode(payload, SECRET_KEY, algorithms=["HS256"])
+    token  = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+
+    if isinstance(token,bytes):
+        token = token.decode("utf-8")
     return token
 
 def verify_token (token: str):

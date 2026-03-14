@@ -11,6 +11,12 @@ class UserBase(BaseModel):
     email: str
     username: str
 
+class UserRegister(BaseModel):
+    first_name: str
+    last_name: str
+    email: str
+    username: str
+    password: str
 
 class UserUpdate(BaseModel):
     first_name: str | None = None
@@ -21,6 +27,7 @@ class UserUpdate(BaseModel):
 
 
 class UserAuthorization(UserBase):
+    id: int | None = None
     password: str
     admin: bool = False
     active: bool = True
@@ -65,7 +72,7 @@ class Task(BaseModel):
     completed: bool = False
 
 
-# TODO: Figure out how to send frontend info as a pydantic model
+#TODO: Add logic for where it checks for duplicates in data before making a new user
 def create_user(db, user: UserAuthorization):
     db.execute(
         """
@@ -165,13 +172,27 @@ def get_user_by_id(db, user_id: int):
 def get_user_by_email(db, email: str):
     db.execute(
         """
-        SELECT id, username, email, password, admin, active
+        SELECT id, first_name, last_name, email, username, password, admin, active
         FROM users
         WHERE email = %s;
         """,
         (email,)
     )
-    return db.fetchone()
+    row = db.fetchone()
+
+    if row is None:
+        return None
+
+    return UserAuthorization(
+        id=row[0],
+        first_name=row[1],
+        last_name=row[2],
+        email=row[3],
+        username=row[4],
+        password=row[5],
+        admin=row[6],
+        active=row[7]
+    )
 
 def get_event_by_id(db, event_id: int):
     db.execute(
@@ -248,15 +269,25 @@ def get_all_events(db):
 
     return events
 
-def get_events_paginated(db, limit, offset):
-    db.execute("""
+def get_events_paginated(db, limit, offset, min_capacity=None):
+    query = """
         SELECT id, title, description, start_date, end_date, created_by, location, max_attendees
         FROM events
-        ORDER BY id
-        LIMIT %s OFFSET %s;
-    """, (limit, offset))
+        WHERE 1=1
+    """
+    params = []
 
+    # NEW FILTER
+    if min_capacity:
+        query += " AND max_attendees >= %s"
+        params.append(min_capacity)
+
+    query += " ORDER BY id LIMIT %s OFFSET %s"
+    params.extend([limit, offset])
+
+    db.execute(query, params)
     rows = db.fetchall()
+
     if not rows:
         return []
 
