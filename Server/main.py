@@ -1,4 +1,5 @@
-from flask import Flask, request
+from flask import Flask, make_response, request
+from flask_cors import CORS
 import bcrypt
 
 from db import (
@@ -6,6 +7,7 @@ from db import (
     get_event_by_id,
     get_events_paginated,
     get_total_events,
+    get_user_by_email,
     update_event,
     Event,
     delete_event,
@@ -18,8 +20,11 @@ from db import (
     delete_user,
     create_user,
 )
+from auth import create_token, verify_token
 
 app = Flask(__name__)
+CORS(app, supports_credentials=True)
+
 
 #TODO1: JWT authentication
 #TODO2: Blueprints (modular routing)
@@ -59,6 +64,77 @@ def handle_unexpected_error(err):
 @app.route("/")
 def home():
     return {"success": True}
+
+
+@app.route("/auth/login", methods=["POST"])
+def login():
+    conn = connect_db
+    cur = conn.cursor()
+
+    try:
+        data = request.get_json()
+        email = data.get("email")
+        password = data.get("password")
+
+        user: dict= get_user_by_email(cur, email)
+
+        if not user:
+            raise APIError("INVALID_CREDENTIALS", "invalid user or passowrd", 401)
+        
+        if not bcrypt.checkpw(password.encode(), user.password.encode()):
+            raise APIError("INVALID_CREDENTIALS", "invalid user or passowrd", 401)
+        
+        token = create_token(user.id)
+        #response needed because you can't set cookie to a normal dict|||
+        response = make_response({
+            "id": user.id,
+            "email": user.email,
+            "name": user.first_name
+        })
+
+        response.set_cookie(
+            "token",
+            token,
+            httponly=True,
+            samesite="Lax",
+            max_age=60*60*24*7 #might need to change this to 1 day (60*60*24)?
+        )
+        return response
+
+    finally:
+        conn.closer()
+
+@app.route("/auth/me", methods=["GET"])
+def get_current_user():
+    token = request.cookies.get("token")
+
+    if not token:
+        raise APIError("UNAUTHORIZED", "Not logged in", 401)
+    
+    user_id = verify_token(token) #does this token contain a userid
+
+    if not user_id:
+        raise APIError("UNAUTHORIZED", "Invalid token", 401)
+    
+    conn = connect_db()
+    cur = conn.cursor()
+
+    try:
+        user = get_user_by_id(cur, user_id) #does this userid even exist in db?
+
+        return success_response(user.model_dump())
+    finally:
+        conn.close()
+
+@app.route("/auth/logout", methods=["POST"])
+def logout():
+    response = make_response({
+        "message": "Logged out successfully"
+    })
+
+    response.delete_cookie("token")
+
+    return response
 
 
 @app.route("/users", methods=["POST"])

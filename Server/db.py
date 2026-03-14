@@ -162,6 +162,16 @@ def get_user_by_id(db, user_id: int):
         first_name=first_name, last_name=last_name, email=email, username=username
     )
 
+def get_user_by_email(db, email: str):
+    db.execute(
+        """
+        SELECT id, username, email, password, admin, active
+        FROM users
+        WHERE email = %s;
+        """,
+        (email,)
+    )
+    return db.fetchone()
 
 def get_event_by_id(db, event_id: int):
     db.execute(
