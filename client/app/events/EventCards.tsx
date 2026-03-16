@@ -2,6 +2,9 @@
 import { useState } from "react";
 import { Event } from "@/types/event";
 import EventFilters from "./EventFilters";
+import { useUserAuthentication } from "../UserAuthentication";
+import Link from "next/link";
+import AddEvent from "./AddEvent";
 type EventCardProps = {
   initialEvents: Event[];
   initialPage: number;
@@ -16,12 +19,15 @@ export default function EventCards({
 }: EventCardProps) {
   const [events, setEvents] = useState<Event[]>(initialEvents);
   const [page, setPage] = useState(initialPage);
-  const [loading, setLoading] = useState(false);
-// should filter be here or in page.tsx?
+  const { user, loading } = useUserAuthentication();
+
+  // should filter be here or in page.tsx?
+  if (loading) return null;
   return (
     <div>
       <div>
-        <EventFilters/>
+        {user && user.admin && <AddEvent />}
+        <EventFilters />
         {events.map((event) => (
           <div key={event.id}>
             <h1>{event.title}</h1>
@@ -31,9 +37,15 @@ export default function EventCards({
               {event.end_datetime}
             </div>
             <div>Description: {event.description}</div>
-            <span>I&apos;m a silly little page {page}</span>
+            {user && (event.created_by === user.id || user.admin) && <button>Edit</button>}
           </div>
         ))}
+        <span>I&apos;m a silly little page {page}</span>
+        {user ? (
+          <p className="text-green-600">Hey stinky you are logged in</p>
+        ) : (
+          <p className="text-red-500">You are not logged in</p>
+        )}
       </div>
     </div>
   );

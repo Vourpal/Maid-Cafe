@@ -6,6 +6,7 @@ from utils import APIError
 from routes.auth_routes import auth_bp
 from routes.user_routes import user_bp
 from routes.event_routes import event_bp
+from routes.attendance_routes import attendance_bp
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True, origins=[
@@ -17,6 +18,7 @@ CORS(app, supports_credentials=True, origins=[
 app.register_blueprint(auth_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(event_bp)
+app.register_blueprint(attendance_bp)
 
 
 # Error handlers

@@ -1,4 +1,4 @@
-from models import UserBase, UserAuthorization, UserUpdate
+from models import UserBase, UserAuthorization, UserMe, UserUpdate
 
 
 # TODO: Add logic to check for duplicates before creating a new user
@@ -21,6 +21,23 @@ def create_user(db, user: UserAuthorization):
     )
     return db.fetchone()[0]
     # Do not commit inside queries — only commit in routes to avoid partial writes
+
+#TODO: consider adding isActive in this for future reference
+def get_me(db,user_id: int):
+    db.execute(
+        """
+        SELECT id, first_name, last_name, email, username, admin
+        FROM users
+        WHERE id = %s;
+        """,
+        (user_id,),
+    )
+    row = db.fetchone()
+    if row is None:
+        return None
+
+    id, first_name, last_name, email, username, admin = row
+    return UserMe(first_name=first_name, last_name=last_name, email=email, username=username, id=id, admin=admin)
 
 
 def get_user_by_id(db, user_id: int):

@@ -6,3 +6,6 @@ run:
 		-e FLASK_DEBUG=1 \
 		-v "$(shell pwd):/app" \
 		maid-cafe-backend flask run --host=0.0.0.0 --port=5000
+
+backend:
+	.venv/Scripts/python main.py

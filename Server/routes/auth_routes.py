@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, make_response, request
 import bcrypt
 
 from db import connect_db
-from queries.user_queries import get_user_by_email, get_user_by_id
+from queries.user_queries import get_me, get_user_by_email
 from auth import create_token, verify_token
 from utils import success_response, APIError
 
@@ -36,6 +36,7 @@ def login():
                     "id": user.id,
                     "email": user.email,
                     "name": user.first_name,
+                    "admin": user.admin
                 },
                 "error": None,
             })
@@ -72,10 +73,9 @@ def get_current_user():
     cur = conn.cursor()
 
     try:
-        user = get_user_by_id(cur, user_id)
+        user = get_me(cur, user_id)
 
         user_dict = user.model_dump()
-        user_dict["name"] = user_dict["first_name"]
 
         return success_response(user_dict)
     finally:

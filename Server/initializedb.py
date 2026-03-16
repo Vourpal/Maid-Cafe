@@ -67,6 +67,7 @@ def initialize_tasks_table(db, conn):
     """)
     conn.commit()
 
+#TODO: Create a rides table where seats available is optional (for passengers)
 
 if __name__ == "__main__":
     conn = connect_db()

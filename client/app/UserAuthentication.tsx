@@ -9,15 +9,18 @@ import {
 } from "react";
 
 type User = {
+  id: number;
   first_name: string;
   last_name: string;
   email: string;
   username: string;
+  admin: boolean;
 };
 
 type UserContextType = {
   user: User | null;
   setUser: (user: User | null) => void;
+  loading: boolean;
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -28,18 +31,20 @@ export function UserAuthenticationProvider({
   children: ReactNode;
 }) {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => { //this is used for auto-login on refresh
+  useEffect(() => {
     fetch("http://localhost:5000/auth/me", {
       credentials: "include",
     })
-      .then(res => res.json())
-      .then(data => setUser(data.data))
-      .catch(() => setUser(null));
+      .then((res) => res.json())
+      .then((data) => setUser(data.data))
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false));
   }, []);
 
   return (
-    <UserContext.Provider value={{ user, setUser }}>
+    <UserContext.Provider value={{ user, setUser, loading }}>
       {children}
     </UserContext.Provider>
   );

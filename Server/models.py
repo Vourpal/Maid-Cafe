@@ -8,6 +8,13 @@ class UserBase(BaseModel):
     email: str
     username: str
 
+class UserMe(BaseModel):
+    id: int
+    first_name: str
+    last_name: str
+    email : str
+    username: str
+    admin: bool
 
 class UserRegister(BaseModel):
     first_name: str
