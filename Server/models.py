@@ -8,13 +8,15 @@ class UserBase(BaseModel):
     email: str
     username: str
 
+
 class UserMe(BaseModel):
     id: int
     first_name: str
     last_name: str
-    email : str
+    email: str
     username: str
     admin: bool
+
 
 class UserRegister(BaseModel):
     first_name: str
@@ -59,12 +61,28 @@ class EventUpdate(BaseModel):
     max_attendees: int | None = None
 
 
+class NewAttendance(BaseModel):
+    user_id: int
+    event_id: int
+    status: str
+    notes: str | None = None
+    role: str | None = None
+    seats_available: int | None = None
+
+
 class Attendance(BaseModel):
     id: int | None = None
     user_id: int
     event_id: int
     status: str  # "going", "not_going", "maybe"
     notes: str | None = None
+    role: str | None = None
+    seats_available: int | None = None
+
+class UpdatedAttendance(BaseModel):
+    status : str | None = None
+    seats_available: int | None = None
+    role : str | None = None
 
 
 class Task(BaseModel):

@@ -1,5 +1,5 @@
 
-from models import Attendance
+from models import Attendance, NewAttendance, UpdatedAttendance
 
 
 def get_attendances_by_user(db, user_id: int):
@@ -25,3 +25,64 @@ def get_attendances_by_user(db, user_id: int):
         )
         for row in rows
     ]
+
+def post_attendance(db, user: NewAttendance):
+    db.execute(
+        """
+        INSERT INTO attendances (user_id, event_id, status, notes, role, seats_available)
+        VALUES (%s,%s,%s,%s,%s,%s)
+        RETURNING id;
+        """,
+        (
+            user.user_id,
+            user.event_id,
+            user.status,
+            user.notes,
+            user.role,
+            user.seats_available
+        )
+        
+    )
+    return db.fetchone()[0]
+
+def update_attendance(db, attendance_id : int, data: UpdatedAttendance ):
+
+    fields = []
+    values = []
+
+    if data.status is not None:
+        fields.append("status = %s")
+        values.append(data.status)
+    if data.seats_available is not None:
+        fields.append("seats_available = %s")
+        values.append(data.seats_available)
+    if data.role is not None:
+        fields.append("role = %s")
+        values.append(data.role)
+    
+    if not fields:
+        return None
+
+    sql = f"""
+        UPDATE attendances
+        SET {", ".join(fields)}
+        WHERE id = %s
+        RETURNING id;
+    """
+    values.append(attendance_id)
+    db.execute(sql, tuple(values))
+
+    row = db.fetchone()
+    return row[0] if row else None
+
+def delete_attendance(db, attendance_id: int):
+    db.execute(
+        """
+        DELETE FROM attendances
+        WHERE id = %s
+        RETURNING id;
+        """,
+        (attendance_id,),
+    )
+    row = db.fetchone()
+    return row[0] if row else None
