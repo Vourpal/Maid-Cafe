@@ -54,9 +54,10 @@ export default function EditAttendance({ attendanceId }: EditAttendanceProps) {
             onClick={() => setForm(false)}
           />
 
-          {/* modal */}
-          <div className="fixed inset-0 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded max-w-md w-full">
+          {/* Modal wrapper */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+            {/* Modal box */}
+            <div className="bg-white p-6 rounded max-w-md w-full pointer-events-auto">
               <button onClick={() => setForm(false)}>✕</button>
               <form onSubmit={handleSubmit} className="flex flex-col gap-3">
                 <select
