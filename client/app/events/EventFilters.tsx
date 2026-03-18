@@ -1,5 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
+import { useUserAuthentication } from "../UserAuthentication";
 
 type EventFiltersProps = {
   showMine: boolean;
@@ -10,6 +11,7 @@ export default function EventFilters({
   showMine,
   setShowMine,
 }: EventFiltersProps) {
+  const { user } = useUserAuthentication();
   const router = useRouter();
 
   function handleLocationChange(e: React.ChangeEvent<HTMLSelectElement>) {
@@ -18,7 +20,7 @@ export default function EventFilters({
   }
 
   function handleMineToggle() {
-    setShowMine(prev => !prev);
+    setShowMine((prev) => !prev);
   }
 
   return (
@@ -31,14 +33,16 @@ export default function EventFilters({
       </select>
 
       {/* Show only my events */}
-      <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-        <input
-          type="checkbox"
-          checked={showMine}
-          onChange={handleMineToggle}
-        />
-        Show my events
-      </label>
+      {user && (
+        <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <input
+            type="checkbox"
+            checked={showMine}
+            onChange={handleMineToggle}
+          />
+          Show my events
+        </label>
+      )}
     </div>
   );
 }

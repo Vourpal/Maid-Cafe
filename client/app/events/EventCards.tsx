@@ -5,6 +5,7 @@ import EventFilters from "./EventFilters";
 import { useUserAuthentication } from "../UserAuthentication";
 import AddEvent from "./AddEvent";
 import EditAttendance from "./EditAttendance";
+import EditEvents from "./EditEvent";
 
 type EventCardProps = {
   initialEvents: Event[];
@@ -28,7 +29,6 @@ export default function EventCards({
   const displayedEvents = showMine
     ? initialEvents.filter((e) => attendances.some((a) => a.event_id === e.id))
     : initialEvents;
-
 
   useEffect(() => {
     if (!user) return;
@@ -82,7 +82,9 @@ export default function EventCards({
         {displayedEvents.map((event) => {
           const isAttending = attendances.some((a) => a.event_id === event.id);
 
-          const currentAttendance = attendances.find((a) => a.event_id === event.id);
+          const currentAttendance = attendances.find(
+            (a) => a.event_id === event.id,
+          );
 
           return (
             <div key={event.id}>
@@ -106,6 +108,18 @@ export default function EventCards({
 
               {user && isAttending && currentAttendance && (
                 <EditAttendance attendanceId={currentAttendance.id} />
+              )}
+
+              {user && user.admin && (
+                <EditEvents
+                  eventIdProp={event.id}
+                  titleProp={event.title}
+                  descriptionProp={event.description}
+                  startDateProp={event.start_datetime}
+                  endDateProp={event.end_datetime}
+                  locationProp={event.location}
+                  maxAttendeesProp={event.max_attendees}
+                />
               )}
 
               {user && (event.created_by === user.id || user.admin) && (
