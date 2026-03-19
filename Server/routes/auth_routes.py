@@ -4,6 +4,7 @@ import bcrypt
 from db import connect_db
 from queries.user_queries import get_me, get_user_by_email
 from auth import create_token, verify_token
+from middleware import require_auth
 from utils import success_response, APIError
 
 auth_bp = Blueprint("auth", __name__)
@@ -16,6 +17,7 @@ def login():
 
     try:
         data = request.get_json()
+        remember_me = data.get("remember_me")
         email = data.get("email")
         password = data.get("password")
 
@@ -27,7 +29,7 @@ def login():
         if not bcrypt.checkpw(password.encode(), user.password.encode()):
             raise APIError("INVALID_CREDENTIALS", "Invalid user or password", 401)
 
-        token = create_token(user.id)
+        token = create_token(user.id, remember_me)
 
         response = make_response(
             jsonify({
@@ -49,7 +51,7 @@ def login():
             samesite="Lax",
             secure=False,  # set to True in production with HTTPS
             path="/",
-            max_age=60 * 60 * 24 * 7,
+            max_age=60 * 60 * 24 * 30 if remember_me else 60 * 60 * 24,
         )
         return response
 
@@ -58,16 +60,8 @@ def login():
 
 
 @auth_bp.route("/auth/me", methods=["GET"])
-def get_current_user():
-    token = request.cookies.get("token")
-
-    if not token:
-        raise APIError("UNAUTHORIZED", "Not logged in", 401)
-
-    user_id = verify_token(token)
-
-    if not user_id:
-        raise APIError("UNAUTHORIZED", "Invalid token", 401)
+@require_auth
+def get_current_user(user_id):
 
     conn = connect_db()
     cur = conn.cursor()

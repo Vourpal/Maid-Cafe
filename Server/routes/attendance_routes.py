@@ -1,14 +1,15 @@
 from flask import Blueprint, request
 
-from auth import verify_token
 from db import connect_db
 from queries.attendance_queries import (
     delete_attendance,
+    get_attendance_by_id,
     get_attendances_by_user,
     post_attendance,
     update_attendance,
 )
 from models import NewAttendance, UpdatedAttendance
+from middleware import require_admin, require_auth
 from utils import APIError, success_response
 
 
@@ -16,17 +17,8 @@ attendance_bp = Blueprint("attendances", __name__)
 
 
 @attendance_bp.route("/attendances/me", methods=["GET", "POST", "DELETE"])
-def my_attendances():
-    token = request.cookies.get("token")
-
-    if not token:
-        raise APIError("UNAUTHORIZED", "Not logged in", 401)
-
-    user_id = verify_token(token)
-
-    if not user_id:
-        raise APIError("UNAUTHORIZED", "Invalid token", 401)
-
+@require_auth
+def my_attendances(user_id):
     conn = connect_db()
     cur = conn.cursor()
     # for the toggle of events pertaining the user
@@ -49,21 +41,16 @@ def my_attendances():
 
 
 @attendance_bp.route("/attendances/<int:attendance_id>", methods=["PATCH", "DELETE"])
-def attendance_detail(attendance_id):
-    token = request.cookies.get("token")
-
-    if not token:
-        raise APIError("UNAUTHORIZED", "Not logged in", 401)
-
-    user_id = verify_token(token)
-
-    if not user_id:
-        raise APIError("UNAUTHORIZED", "Invalid token", 401)
+@require_auth
+def attendance_detail(user_id, attendance_id):
 
     conn = connect_db()
     cur = conn.cursor()
 
     try:
+        attendance = get_attendance_by_id(cur, attendance_id)
+        if attendance.user_id != user_id:
+            raise APIError("FORBIDDEN", "Not your attendance", 403)
         if request.method == "PATCH":
             data = request.get_json()
             attendance_data = UpdatedAttendance(**data)

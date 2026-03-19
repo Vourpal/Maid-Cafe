@@ -26,6 +26,23 @@ def get_attendances_by_user(db, user_id: int):
         for row in rows
     ]
 
+def get_attendance_by_id(db, attendance_id: int):
+    db.execute(
+        """
+        SELECT id, user_id, event_id, status, notes, role, seats_available
+        FROM attendances
+        WHERE id = %s;
+        """,
+        (attendance_id,),
+    )
+    row = db.fetchone()
+    if row is None:
+        return None
+    return Attendance(
+        id=row[0], user_id=row[1], event_id=row[2],
+        status=row[3], notes=row[4], role=row[5], seats_available=row[6]
+    )
+
 def post_attendance(db, user: NewAttendance):
     db.execute(
         """

@@ -16,6 +16,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
+  const [rememberMe, setRememberMe] = useState(false);
+
+   function handleLoginDuration() {
+    setRememberMe((prev) => !prev);
+  }
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -25,7 +31,7 @@ export default function LoginPage() {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, remember_me: rememberMe }),
       });
 
       if (!res.ok) throw new Error("Invalid login");
@@ -34,7 +40,6 @@ export default function LoginPage() {
       setUser(json.data);
 
       router.push(redirectTo);
-
     } catch (err) {
       setError("Invalid email or password");
     }
@@ -73,6 +78,16 @@ export default function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
           />
           <button type="submit">Login</button>
+          <label
+            style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
+          >
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={handleLoginDuration}
+            />
+            Remember me
+          </label>{" "}
         </form>
       )}
 

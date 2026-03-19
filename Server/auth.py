@@ -1,12 +1,17 @@
 import jwt
 import datetime
-#think i have to put this in an env file?
-SECRET_KEY = "a8f3c9e1b7d4f6a2c1e9d8b3f4a6c7e1"
+import os
+from dotenv import load_dotenv # type: ignore
 
-def create_token(user_id: int):
+load_dotenv()
+
+SECRET_KEY = os.getenv("SECRET_KEY")
+
+def create_token(user_id: int, remember_me: bool):
+    days = 30 if remember_me else 1
     payload = {
         "user_id": user_id,
-        "exp": datetime.datetime.now() + datetime.timedelta(days=1)
+        "exp": datetime.datetime.now() + datetime.timedelta(days=days)
     }
 
     token  = jwt.encode(payload, SECRET_KEY, algorithm="HS256")

@@ -9,6 +9,7 @@ venv/
 ENV/
 env/
 .env/  # if you store virtualenv here
+.env
 
 # Distribution / packaging
 build/

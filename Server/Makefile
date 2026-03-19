@@ -9,3 +9,6 @@ run:
 
 backend:
 	.venv/Scripts/python main.py
+
+install:
+	.venv/Scripts/python -m pip install $(package)

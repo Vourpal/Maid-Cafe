@@ -1,13 +1,17 @@
 import psycopg2
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 def connect_db():
     try:
         conn = psycopg2.connect(
-            dbname="Maid_Cafe",
-            user="postgres",
-            password="Eurekasan2478!",
-            host="localhost",
+            dbname=os.getenv("DATABASE_NAME"),
+            user=os.getenv("DATABASE_USER"),
+            password=os.getenv("DATABASE_PASSWORD"),
+            host=os.getenv("DATABASE_HOST"),
         )
         print("Connected to the database!")
         return conn
