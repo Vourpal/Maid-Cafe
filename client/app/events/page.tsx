@@ -1,4 +1,5 @@
 import EventCards from "./EventCards";
+import Pagination from "./Pagination";
 
 export default async function Event({ searchParams }) {
   const params = await searchParams;
@@ -22,6 +23,11 @@ export default async function Event({ searchParams }) {
     <div>
       <p>yippee this is where we will test the events i guess?</p>
       <EventCards initialEvents={data.data.events} initialPage={page} />
+      <Pagination
+        currentPage={Number(page)}
+        total={data.data.total}
+        quantity={Number(quantity)}
+      />
     </div>
   );
 }

@@ -49,7 +49,7 @@ export default function AddEvent() {
 
   return (
     <div>
-      <button onClick={() => setForm(true)}>Add Event</button>
+      <button onClick={() => setForm(true)} className="px-4 py-2 bg-green-600 text-white rounded">Add Event</button >
 
       {form && (
         <>
@@ -71,6 +71,7 @@ export default function AddEvent() {
                   maxLength={100}
                   onChange={(e) => setTitle(e.target.value)}
                   className="border p-2 rounded"
+                  required
                 />
 
                 <textarea
@@ -86,6 +87,7 @@ export default function AddEvent() {
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                   className="border p-2 rounded"
+                  required
                 />
 
                 <input
@@ -93,6 +95,7 @@ export default function AddEvent() {
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                   className="border p-2 rounded"
+                  required
                 />
 
                 <input
@@ -113,6 +116,7 @@ export default function AddEvent() {
                       e.target.value === "" ? "" : Number(e.target.value),
                     )
                   }
+                  required
                   className="border p-2 rounded"
                 />
 

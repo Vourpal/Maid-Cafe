@@ -91,7 +91,7 @@ export default function EditEvents({
 
   return (
     <div>
-      <button onClick={() => setForm(true)}>Edit Event ADMIN ONLY</button>
+      <button onClick={() => setForm(true)} className="px-4 py-2 bg-purple-600 text-white rounded">Edit Event ADMIN ONLY</button>
 
       {form && (
         <>
