@@ -6,6 +6,7 @@ import { useUserAuthentication } from "../UserAuthentication";
 import AddEvent from "./AddEvent";
 import EditAttendance from "./EditAttendance";
 import EditEvents from "./EditEvent";
+import SignUpModal from "./SignUpModal";
 
 type EventCardProps = {
   initialEvents: Event[];
@@ -25,13 +26,14 @@ export default function EventCards({
   const [attendances, setAttendances] = useState<AttendanceRecord[]>([]);
   const [showMine, setShowMine] = useState(false);
   const { user, loading } = useUserAuthentication();
-  console.log("attendances", attendances);
+
   const displayedEvents = showMine
     ? initialEvents.filter((e) => attendances.some((a) => a.event_id === e.id))
     : initialEvents;
 
   useEffect(() => {
     if (!user) return;
+
     fetch("http://localhost:5000/attendances/me", {
       credentials: "include",
     })
@@ -41,23 +43,11 @@ export default function EventCards({
           data.data.map((a: AttendanceRecord) => ({
             id: a.id,
             event_id: a.event_id,
-          })),
-        ),
+          }))
+        )
       )
       .catch(() => setAttendances([]));
   }, [user]);
-
-  async function handleSignUp(eventId: number) {
-    const res = await fetch("http://localhost:5000/attendances/me", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ event_id: eventId, status: "going" }),
-    });
-
-    const data = await res.json();
-    setAttendances([...attendances, { id: data.data.id, event_id: eventId }]);
-  }
 
   async function handleLeave(eventId: number) {
     const attendance = attendances.find((a) => a.event_id === eventId);
@@ -72,44 +62,55 @@ export default function EventCards({
   }
 
   if (loading) return null;
-  console.log(attendances);
 
   return (
     <div>
       <div>
         {user && user.admin && <AddEvent />}
         <EventFilters showMine={showMine} setShowMine={setShowMine} />
+
         {displayedEvents.map((event) => {
           const isAttending = attendances.some((a) => a.event_id === event.id);
-
           const currentAttendance = attendances.find(
-            (a) => a.event_id === event.id,
+            (a) => a.event_id === event.id
           );
 
           return (
             <div key={event.id}>
               <h1>{event.title}</h1>
+
               <div>
                 Will be located at {event.location} with a max of{" "}
                 {event.max_attendees} participants... final date to sign up is{" "}
                 {event.end_datetime}
               </div>
+
               <div>Description: {event.description}</div>
 
+              {/* SIGN UP / LEAVE BUTTONS */}
               {user && (
-                <button
-                  onClick={() =>
-                    isAttending ? handleLeave(event.id) : handleSignUp(event.id)
-                  }
-                >
-                  {isAttending ? "Leave Event" : "Sign Up"}
-                </button>
+                <>
+                  {isAttending ? (
+                    <button onClick={() => handleLeave(event.id)} className="px-4 py-2 bg-red-600 text-white rounded">
+                      Leave Event
+                    </button>
+                  ) : (
+                    <SignUpModal
+                      eventId={event.id}
+                      onSuccess={(newAttendance) =>
+                        setAttendances([...attendances, newAttendance])
+                      }
+                    />
+                  )}
+                </>
               )}
 
+              {/* EDIT ATTENDANCE (only if attending) */}
               {user && isAttending && currentAttendance && (
                 <EditAttendance attendanceId={currentAttendance.id} />
               )}
 
+              {/* ADMIN EVENT EDIT */}
               {user && user.admin && (
                 <EditEvents
                   eventIdProp={event.id}
@@ -121,14 +122,12 @@ export default function EventCards({
                   maxAttendeesProp={event.max_attendees}
                 />
               )}
-
-              {user && (event.created_by === user.id || user.admin) && (
-                <button>Edit</button>
-              )}
             </div>
           );
         })}
+
         <span>I&apos;m a silly little page {page}</span>
+
         {user ? (
           <p className="text-green-600">Hey stinky you are logged in</p>
         ) : (

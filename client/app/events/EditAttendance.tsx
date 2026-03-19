@@ -1,3 +1,4 @@
+"use client"
 import { useState } from "react";
 import { useUserAuthentication } from "../UserAuthentication";
 import { useRouter } from "next/navigation";
