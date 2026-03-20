@@ -1,7 +1,7 @@
 import EventCards from "./EventCards";
 import EventPagination from "./Pagination";
 
-export default async function Event({ searchParams }) {
+export default async function Event({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
   const params = await searchParams;
 
   const page = params.page ?? 1;
@@ -26,7 +26,7 @@ export default async function Event({ searchParams }) {
   return (
     <div>
       <p>yippee this is where we will test the events i guess?</p>
-      <EventCards initialEvents={data.data?.events ?? []} initialPage={page} />
+      <EventCards initialEvents={data.data?.events ?? []} initialPage={Number(page)} />
       <EventPagination
         currentPage={Number(page)}
         total={data.data?.total ?? 0}
