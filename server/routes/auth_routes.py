@@ -50,8 +50,8 @@ def login():
             "token",
             token,
             httponly=True,
-            samesite="Lax",
-            secure=False,  # set to True in production with HTTPS
+            samesite="None",  # changed from "Lax"
+            secure=True,      # changed from False — required when samesite="None"
             path="/",
             max_age=60 * 60 * 24 * 30 if remember_me else 60 * 60 * 24,
         )
