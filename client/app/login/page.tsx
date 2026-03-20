@@ -32,7 +32,7 @@ function LoginForm() {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
         method: "POST",
-        credentials: "include",
+        // credentials: "include", this is for cookies
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, remember_me: rememberMe }),
       });
@@ -40,6 +40,7 @@ function LoginForm() {
       if (!res.ok) throw new Error("Invalid login");
 
       const json = await res.json();
+      localStorage.setItem("token", json.data.token)
       setUser(json.data);
 
       router.push(redirectTo);
@@ -51,8 +52,9 @@ function LoginForm() {
   async function handleLogout() {
     await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
       method: "POST",
-      credentials: "include",
+      // credentials: "include",
     });
+    localStorage.removeItem("token")
     setUser(null);
     router.push("/login");
   }

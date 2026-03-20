@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { authHeaders } from "@/lib/api";
 
 export default function Account() {
   const { user, loading, setUser } = useUserAuthentication();
@@ -53,8 +54,8 @@ export default function Account() {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${user.id}`, {
         method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        // credentials: "include",
+        headers:authHeaders(),
         body: JSON.stringify({
           current_password: currentPassword,
           password: newPassword,
@@ -84,8 +85,8 @@ export default function Account() {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${user.id}`, {
         method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        // credentials: "include",
+        headers: authHeaders(),
         body: JSON.stringify({ [editingField]: newValue }),
       });
 

@@ -7,32 +7,84 @@ from db import connect_db
 from queries.user_queries import get_me
 from utils import APIError
 
+# COOKIE VERSION
+
+# def require_auth(func):
+#     @wraps(func)
+#     def wrapper(*args, **kwargs):
+#         token = request.cookies.get("token")
+
+#         if not token:
+#             raise APIError("UNAUTHORIZED", "Not logged in", 401)
+
+#         user_id = verify_token(token)
+
+#         if not user_id:
+#             raise APIError("UNAUTHORIZED", "Invalid token", 401)
+#         return func(user_id=user_id, *args, **kwargs)
+
+#     return wrapper
+
+# LOCALSTORAGE VERSION
+
 
 def require_auth(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
-        token = request.cookies.get("token")
+        auth_header = request.headers.get("Authorization")
 
-        if not token:
+        if not auth_header or not auth_header.startswith("Bearer "):
             raise APIError("UNAUTHORIZED", "Not logged in", 401)
 
+        token = auth_header.split(" ")[1]
         user_id = verify_token(token)
 
         if not user_id:
             raise APIError("UNAUTHORIZED", "Invalid token", 401)
+
         return func(user_id=user_id, *args, **kwargs)
 
     return wrapper
 
 
+# COOKIE VERSION
+
+# def require_admin(func):
+#     @wraps(func)
+#     def wrapper(*args, **kwargs):
+#         token = request.cookies.get("token")
+
+#         if not token:
+#             raise APIError("UNAUTHORIZED", "Not logged in", 401)
+
+#         user_id = verify_token(token)
+
+#         if not user_id:
+#             raise APIError("UNAUTHORIZED", "Invalid token", 401)
+
+#         conn = connect_db()
+#         cur = conn.cursor()
+#         try:
+#             user = get_me(cur, user_id)
+#             if not user.admin:
+#                 raise APIError("FORBIDDEN", "Admins only", 403)
+#         finally:
+#             conn.close()
+
+#         return func(user_id=user_id, *args, **kwargs)
+
+#     return wrapper
+
+
 def require_admin(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
-        token = request.cookies.get("token")
+        auth_header = request.headers.get("Authorization")
 
-        if not token:
+        if not auth_header or not auth_header.startswith("Bearer "):
             raise APIError("UNAUTHORIZED", "Not logged in", 401)
 
+        token = auth_header.split(" ")[1]
         user_id = verify_token(token)
 
         if not user_id:
@@ -48,4 +100,5 @@ def require_admin(func):
             conn.close()
 
         return func(user_id=user_id, *args, **kwargs)
+
     return wrapper

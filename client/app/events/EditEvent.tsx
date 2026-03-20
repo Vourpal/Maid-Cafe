@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { toast } from "sonner"
+import { authHeaders, authHeadersNoContent } from "@/lib/api";
 
 type EditEventProps = {
   eventIdProp: number;
@@ -47,7 +48,8 @@ export default function EditEvents({
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/events/${eventIdProp}`, {
         method: "DELETE",
-        credentials: "include",
+        // credentials: "include",
+        headers: authHeadersNoContent(),
       });
       if (!res.ok) throw new Error("Failed to delete event");
       setDeleteEvent(false);
@@ -66,8 +68,8 @@ export default function EditEvents({
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/events/${eventIdProp}`, {
         method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        // credentials: "include",
+        headers: authHeaders(),
         body: JSON.stringify({
           title,
           description,

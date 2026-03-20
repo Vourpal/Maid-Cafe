@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { toast } from "sonner"
+import { authHeaders } from "@/lib/api";
 
 type EditAttendanceProps = {
   attendanceId: number;
@@ -29,8 +30,8 @@ export default function EditAttendance({ attendanceId }: EditAttendanceProps) {
         `${process.env.NEXT_PUBLIC_API_URL}/attendances/${attendanceId}`,
         {
           method: "PATCH",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
+          // credentials: "include",
+          headers: authHeaders(),
           body: JSON.stringify({
             status,
             seats_available: seatsAvailable,

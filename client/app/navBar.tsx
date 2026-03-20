@@ -9,6 +9,7 @@ import {
   NavigationMenuItem,
   NavigationMenuList,
 } from "@/components/ui/navigation-menu";
+import { authHeadersNoContent } from "@/lib/api";
 
 export default function NavBar() {
   const router = useRouter();
@@ -17,8 +18,10 @@ export default function NavBar() {
   async function handleLogout() {
     await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
       method: "POST",
-      credentials: "include",
+      // credentials: "include",
+      headers: authHeadersNoContent(),
     });
+    localStorage.removeItem("token")
     setUser(null);
     router.push("/login");
   }

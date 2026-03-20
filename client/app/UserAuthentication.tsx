@@ -34,12 +34,24 @@ export function UserAuthenticationProvider({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      setTimeout(() => {
+        setUser(null);
+        setLoading(false);
+      }, 0);
+      return;
+    }
+
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
-      credentials: "include",
+      // credentials: "include",   change this for when using cookies
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     })
       .then((res) => res.json())
-      .then((data) => 
-        setUser(data.data))
+      .then((data) => setUser(data.data))
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
   }, []);

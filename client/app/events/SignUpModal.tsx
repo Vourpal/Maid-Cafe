@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { toast } from "sonner"
+import { authHeaders } from "@/lib/api";
 
 type SignUpModalProps = {
   eventId: number;
@@ -26,8 +27,8 @@ export default function SignUpModal({ eventId, onSuccess }: SignUpModalProps) {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/attendances/me`, {
         method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        // credentials: "include",
+        headers: authHeaders(),
         body: JSON.stringify({
           event_id: eventId,
           status,

@@ -31,31 +31,49 @@ def login():
 
         token = create_token(user.id, remember_me)
 
-        response = make_response(
-            jsonify({
-                "success": True,
-                "data": {
-                    "id": user.id,
-                    "email": user.email,
-                    "first_name": user.first_name,
-                    "last_name": user.last_name,
-                    "username": user.username,
-                    "admin": user.admin
-                },
-                "error": None,
-            })
-        )
+        #This is for localstorage
+        return jsonify({
+            "success": True,
+            "data": {
+                "id": user.id,
+                "email": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "username": user.username,
+                "admin": user.admin,
+                "token": token  # ← return token in body
+            },
+            "error": None,
+        })
+    
+        # This is for cookies
 
-        response.set_cookie(
-            "token",
-            token,
-            httponly=True,
-            samesite="None",  # changed from "Lax"
-            secure=True,      # changed from False — required when samesite="None"
-            path="/",
-            max_age=60 * 60 * 24 * 30 if remember_me else 60 * 60 * 24,
-        )
-        return response
+        # response = make_response(
+        #         jsonify({
+        #             "success": True,
+        #             "data": {
+        #                 "id": user.id,
+        #                 "email": user.email,
+        #                 "first_name": user.first_name,
+        #                 "last_name": user.last_name,
+        #                 "username": user.username,
+        #                 "admin": user.admin
+        #             },
+        #             "error": None,
+        #         })
+        #     )
+
+
+        # response.set_cookie(
+        #     "token",
+        #     token,
+        #     httponly=True,
+        #     samesite="None",  # changed from "Lax"
+        #     secure=True,      # changed from False — required when samesite="None"
+        #     path="/",
+        #     max_age=60 * 60 * 24 * 30 if remember_me else 60 * 60 * 24,
+        # )
+        # return response
 
     finally:
         conn.close()
@@ -80,6 +98,9 @@ def get_current_user(user_id):
 
 @auth_bp.route("/auth/logout", methods=["POST"])
 def logout():
-    response = make_response({"message": "Logged out successfully"})
-    response.delete_cookie("token", path="/", samesite="Lax")
-    return response
+
+    # for cookies, make sure to change samsite to None when deploying...
+    #response = make_response({"message": "Logged out successfully"})
+    #response.delete_cookie("token", path="/", samesite="Lax")
+    #return response
+    return jsonify({"success": True, "message": "Logged out"})

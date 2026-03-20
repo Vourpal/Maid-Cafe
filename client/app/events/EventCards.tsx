@@ -10,6 +10,7 @@ import SignUpModal from "./SignUpModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { authHeadersNoContent } from "@/lib/api";
 
 type EventCardProps = {
   initialEvents: Event[];
@@ -46,7 +47,8 @@ export default function EventCards({
   useEffect(() => {
     if (!user) return;
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/attendances/me`, {
-      credentials: "include",
+      // credentials: "include",
+      headers: authHeadersNoContent(),
     })
       .then((res) => res.json())
       .then((data) =>
@@ -66,7 +68,8 @@ export default function EventCards({
 
     await fetch(`${process.env.NEXT_PUBLIC_API_URL}/attendances/${attendance.id}`, {
       method: "DELETE",
-      credentials: "include",
+      headers: authHeadersNoContent(),
+      // credentials: "include",
     });
 
     setAttendances(attendances.filter((a) => a.event_id !== eventId));

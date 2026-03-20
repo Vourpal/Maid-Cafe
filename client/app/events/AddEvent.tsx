@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { toast } from "sonner"
+import { authHeaders } from "@/lib/api";
 
 export default function AddEvent() {
   const router = useRouter();
@@ -28,8 +29,8 @@ export default function AddEvent() {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/events`, {
         method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        // credentials: "include",
+        headers: authHeaders(),
         body: JSON.stringify({
           title,
           description,
