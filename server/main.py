@@ -1,12 +1,14 @@
 from flask import Flask
 from flask_cors import CORS
 import traceback
-
+import os
 from utils import APIError
 from routes.auth_routes import auth_bp
 from routes.user_routes import user_bp
 from routes.event_routes import event_bp
 from routes.attendance_routes import attendance_bp
+
+print("PORT:", os.getenv("PORT"))
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True, origins=[
