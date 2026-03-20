@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUserAuthentication } from "../UserAuthentication";
 import Link from "next/link";
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, setUser } = useUserAuthentication();
@@ -49,7 +49,7 @@ export default function LoginPage() {
   }
 
   async function handleLogout() {
-    await fetch("${process.env.NEXT_PUBLIC_API_URL}/auth/logout", {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
       method: "POST",
       credentials: "include",
     });
@@ -60,7 +60,10 @@ export default function LoginPage() {
   if (user) {
     return (
       <div className="max-w-md mx-auto px-4 py-10 text-center">
-        <p className="text-gray-700 mb-4">Logged in as <span className="font-semibold text-rose-500">{user.first_name}</span></p>
+        <p className="text-gray-700 mb-4">
+          Logged in as{" "}
+          <span className="font-semibold text-rose-500">{user.first_name}</span>
+        </p>
         <Button
           onClick={handleLogout}
           variant="outline"
@@ -131,5 +134,13 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }
