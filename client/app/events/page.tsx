@@ -25,7 +25,6 @@ export default async function Event({ searchParams }: { searchParams: Promise<Re
 
   return (
     <div>
-      <p>yippee this is where we will test the events i guess?</p>
       <EventCards initialEvents={data.data?.events ?? []} initialPage={Number(page)} />
       <EventPagination
         currentPage={Number(page)}
