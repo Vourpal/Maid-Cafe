@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS events (
     created_by INTEGER NOT NULL,
     location VARCHAR(100),
     max_attendees INT,
+    status VARCHAR(20) NOT NULL DEFAULT 'draft'
     FOREIGN KEY (created_by) REFERENCES users(id)
 );
 

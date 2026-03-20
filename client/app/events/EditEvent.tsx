@@ -11,6 +11,7 @@ type EditEventProps = {
   endDateProp: string;
   locationProp: string | null;
   maxAttendeesProp: number | null;
+  statusProps: string;
 };
 
 export default function EditEvents({
@@ -21,6 +22,7 @@ export default function EditEvents({
   endDateProp,
   locationProp,
   maxAttendeesProp,
+  statusProps,
 }: EditEventProps) {
   const router = useRouter();
   const [form, setForm] = useState(false);
@@ -39,6 +41,8 @@ export default function EditEvents({
   const [maxAttendees, setMaxAttendees] = useState<number | "">(
     maxAttendeesProp ?? "",
   );
+
+  const [status, setStatus] = useState(statusProps);
 
   const [deleteEvent, setDeleteEvent] = useState(false);
 
@@ -77,6 +81,7 @@ export default function EditEvents({
           end_datetime: endDate + "T00:00:00",
           location,
           max_attendees: maxAttendees,
+          status,
         }),
       });
 
@@ -91,7 +96,12 @@ export default function EditEvents({
 
   return (
     <div>
-      <button onClick={() => setForm(true)} className="px-4 py-2 bg-purple-600 text-white rounded">Edit Event ADMIN ONLY</button>
+      <button
+        onClick={() => setForm(true)}
+        className="px-4 py-2 bg-purple-600 text-white rounded"
+      >
+        Edit Event ADMIN ONLY
+      </button>
 
       {form && (
         <>
@@ -159,6 +169,15 @@ export default function EditEvents({
                   }
                   className="border p-2 rounded"
                 />
+
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                >
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
 
                 <button
                   type="submit"

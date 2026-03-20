@@ -7,4 +7,5 @@ export type Event = {
   created_by: number;
   location: string | null;
   max_attendees: number | null;
+  status: string;
 };

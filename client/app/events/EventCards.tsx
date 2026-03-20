@@ -43,8 +43,8 @@ export default function EventCards({
           data.data.map((a: AttendanceRecord) => ({
             id: a.id,
             event_id: a.event_id,
-          }))
-        )
+          })),
+        ),
       )
       .catch(() => setAttendances([]));
   }, [user]);
@@ -72,7 +72,7 @@ export default function EventCards({
         {displayedEvents.map((event) => {
           const isAttending = attendances.some((a) => a.event_id === event.id);
           const currentAttendance = attendances.find(
-            (a) => a.event_id === event.id
+            (a) => a.event_id === event.id,
           );
 
           return (
@@ -82,7 +82,8 @@ export default function EventCards({
               <div>
                 Will be located at {event.location} with a max of{" "}
                 {event.max_attendees} participants... final date to sign up is{" "}
-                {event.end_datetime}
+                {event.end_datetime} The status of this thingy is ermm..:{" "}
+                {event.status}
               </div>
 
               <div>Description: {event.description}</div>
@@ -91,7 +92,10 @@ export default function EventCards({
               {user && (
                 <>
                   {isAttending ? (
-                    <button onClick={() => handleLeave(event.id)} className="px-4 py-2 bg-red-600 text-white rounded">
+                    <button
+                      onClick={() => handleLeave(event.id)}
+                      className="px-4 py-2 bg-red-600 text-white rounded"
+                    >
                       Leave Event
                     </button>
                   ) : (
@@ -120,6 +124,7 @@ export default function EventCards({
                   endDateProp={event.end_datetime}
                   locationProp={event.location}
                   maxAttendeesProp={event.max_attendees}
+                  statusProps={event.status}
                 />
               )}
             </div>

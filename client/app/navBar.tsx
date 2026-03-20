@@ -34,6 +34,9 @@ export default function NavBar() {
             <button onClick={handleLogout}>Logout</button>
           </li>
         )}
+        <li>
+          <Link href="/account">Account</Link>
+        </li>
       </ul>
     </div>
   );

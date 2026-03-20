@@ -16,6 +16,7 @@ export default function AddEvent() {
   const [endDate, setEndDate] = useState("");
   const [location, setLocation] = useState("");
   const [maxAttendees, setMaxAttendees] = useState<number | "">("");
+  const [status, setStatus] = useState("draft")
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -35,6 +36,7 @@ export default function AddEvent() {
           location,
           max_attendees: maxAttendees,
           created_by: user.id,
+          status
         }),
       });
 
@@ -119,6 +121,15 @@ export default function AddEvent() {
                   required
                   className="border p-2 rounded"
                 />
+
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                >
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
 
                 <button
                   type="submit"

@@ -12,8 +12,8 @@ type User = {
   id: number;
   first_name: string;
   last_name: string;
-  email: string;
-  username: string;
+  email: string; // same with this
+  username: string; // might want to make this unique
   admin: boolean;
 };
 
@@ -38,7 +38,8 @@ export function UserAuthenticationProvider({
       credentials: "include",
     })
       .then((res) => res.json())
-      .then((data) => setUser(data.data))
+      .then((data) => 
+        setUser(data.data))
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
   }, []);

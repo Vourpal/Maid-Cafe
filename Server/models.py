@@ -50,6 +50,7 @@ class Event(BaseModel):
     created_by: int  # user_id
     location: str | None = None
     max_attendees: int | None = None
+    status: str = "draft"
 
 
 class EventUpdate(BaseModel):
@@ -59,6 +60,7 @@ class EventUpdate(BaseModel):
     end_datetime: datetime | None = None
     location: str | None = None
     max_attendees: int | None = None
+    status: str | None = None
 
 
 class NewAttendance(BaseModel):

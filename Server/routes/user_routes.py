@@ -5,6 +5,7 @@ from db import connect_db
 from models import UserRegister, UserAuthorization, UserUpdate
 from queries.user_queries import (
     get_me,
+    get_user_by_email,
     get_user_by_id,
     create_user,
     update_user,
@@ -75,7 +76,19 @@ def user_detail(user_id, target_user_id):
         if request.method == "PATCH":
             data = request.get_json()
             user_data = UserUpdate(**data)
+
             if user_data.password is not None:
+                current_password = data.get("current_password")
+                if not current_password:
+                    raise APIError("BAD_REQUEST", "current password required", 400)
+
+                full_user = get_user_by_email(cur, current_user.email)
+
+                if not bcrypt.checkpw(
+                    current_password.encode(), full_user.password.encode()
+                ):
+                    raise APIError("FORBIDDEN", "Current password is incorrect", 403)
+
                 hashed_pw = bcrypt.hashpw(
                     user_data.password.encode("utf-8"), bcrypt.gensalt()
                 )

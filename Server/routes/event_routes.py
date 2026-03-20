@@ -21,11 +21,19 @@ def get_events(user_id=None):
         offset = (page - 1) * quantity
         min_capacity = request.args.get("min_capacity")
 
-        events = get_events_paginated(cur, quantity, offset, min_capacity)
-        total = get_total_events(cur)
+        search = request.args.get("search_term")
+
+        events = get_events_paginated(cur, quantity, offset, min_capacity, search)
+        total = get_total_events(cur, search)
 
         if len(events) == 0:
-            raise APIError("EVENTS_NOT_FOUND", "No events found", 404)
+            return success_response({
+                "page": page,
+                "quantity": quantity,
+                "count": 0,
+                "total": 0,
+                "events": [],
+            }, 200)
 
         return success_response({
             "page": page,

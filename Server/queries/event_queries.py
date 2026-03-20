@@ -4,8 +4,8 @@ from models import Event, EventUpdate
 def create_event(db, event: Event):
     db.execute(
         """
-        INSERT INTO events (title, description, start_date, end_date, created_by, location, max_attendees)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO events (title, description, start_date, end_date, created_by, location, max_attendees, status)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING id;
         """,
         (
@@ -16,6 +16,7 @@ def create_event(db, event: Event):
             event.created_by,
             event.location,
             event.max_attendees,
+            event.status
         ),
     )
     return db.fetchone()[0]
@@ -24,7 +25,7 @@ def create_event(db, event: Event):
 def get_event_by_id(db, event_id: int):
     db.execute(
         """
-        SELECT id, title, description, start_date, end_date, created_by, location, max_attendees
+        SELECT id, title, description, start_date, end_date, created_by, location, max_attendees, status
         FROM events
         WHERE id = %s;
         """,
@@ -34,7 +35,7 @@ def get_event_by_id(db, event_id: int):
     if row is None:
         return None
 
-    id, title, description, start_date, end_date, created_by, location, max_attendees = row
+    id, title, description, start_date, end_date, created_by, location, max_attendees, status = row
     return Event(
         id=id,
         title=title,
@@ -44,12 +45,13 @@ def get_event_by_id(db, event_id: int):
         created_by=created_by,
         location=location,
         max_attendees=max_attendees,
+        status = status
     )
 
 
-def get_events_paginated(db, limit, offset, min_capacity=None):
+def get_events_paginated(db, limit, offset, min_capacity=None, search=None):
     query = """
-        SELECT id, title, description, start_date, end_date, created_by, location, max_attendees
+        SELECT id, title, description, start_date, end_date, created_by, location, max_attendees, status
         FROM events
         WHERE 1=1
     """
@@ -58,6 +60,11 @@ def get_events_paginated(db, limit, offset, min_capacity=None):
     if min_capacity:
         query += " AND max_attendees >= %s"
         params.append(min_capacity)
+    
+    if search:
+        query += " AND (title ILIKE %s OR description ILIKE %s)"
+        params.append(f"%{search}%")
+        params.append(f"%{search}%")
 
     query += " ORDER BY id LIMIT %s OFFSET %s"
     params.extend([limit, offset])
@@ -77,13 +84,26 @@ def get_events_paginated(db, limit, offset, min_capacity=None):
             created_by=row[5],
             location=row[6],
             max_attendees=row[7],
+            status=row[8]
         )
         for row in rows
     ]
 
 
-def get_total_events(db):
-    db.execute("SELECT COUNT(*) FROM events;")
+def get_total_events(db, search=None):
+    query = "SELECT COUNT(*) FROM events WHERE 1=1"
+    params = []
+
+    # if min_capacity:
+    #     query += " AND max_attendees >= %s"
+    #     params.append(min_capacity)
+
+    if search:
+        query += " AND (title ILIKE %s OR description ILIKE %s)"
+        params.append(f"%{search}%")
+        params.append(f"%{search}%")
+
+    db.execute(query, params)
     return db.fetchone()[0]
 
 
