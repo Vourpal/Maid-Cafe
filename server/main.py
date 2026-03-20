@@ -50,5 +50,15 @@ def home():
     return {"success": True}
 
 
+@app.route("/debug")
+def debug():
+    from db import connect_db
+    conn = connect_db()
+    if conn:
+        conn.close()
+        return {"success": True, "db": "connected"}
+    return {"success": False, "db": "failed"}, 500
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
