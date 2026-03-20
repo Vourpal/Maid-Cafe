@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel } from "@/components/ui/field";
+import { toast } from "sonner"
 
 type EditAttendanceProps = {
   attendanceId: number;
@@ -25,7 +26,7 @@ export default function EditAttendance({ attendanceId }: EditAttendanceProps) {
 
     try {
       const res = await fetch(
-        `http://localhost:5000/attendances/${attendanceId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/attendances/${attendanceId}`,
         {
           method: "PATCH",
           credentials: "include",
@@ -124,6 +125,7 @@ export default function EditAttendance({ attendanceId }: EditAttendanceProps) {
                   <Button
                     type="submit"
                     className="bg-rose-500 hover:bg-rose-600 text-white flex-1"
+                    onClick={() => toast.success("Edited the attendance successfully!")}
                   >
                     Save
                   </Button>

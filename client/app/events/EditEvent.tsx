@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel } from "@/components/ui/field";
+import { toast } from "sonner"
 
 type EditEventProps = {
   eventIdProp: number;
@@ -44,7 +45,7 @@ export default function EditEvents({
 
   async function handleDelete() {
     try {
-      const res = await fetch(`http://localhost:5000/events/${eventIdProp}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/events/${eventIdProp}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -63,7 +64,7 @@ export default function EditEvents({
     if (!user) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/events/${eventIdProp}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/events/${eventIdProp}`, {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -200,6 +201,7 @@ export default function EditEvents({
                   <Button
                     type="submit"
                     className="bg-rose-500 hover:bg-rose-600 text-white flex-1"
+                    onClick={() => toast.success("Successfully edited the event!")}
                   >
                     Save
                   </Button>

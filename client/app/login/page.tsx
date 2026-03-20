@@ -30,7 +30,7 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const res = await fetch("http://localhost:5000/auth/login", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -49,7 +49,7 @@ export default function LoginPage() {
   }
 
   async function handleLogout() {
-    await fetch("http://localhost:5000/auth/logout", {
+    await fetch("${process.env.NEXT_PUBLIC_API_URL}/auth/logout", {
       method: "POST",
       credentials: "include",
     });

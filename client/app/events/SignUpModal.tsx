@@ -4,6 +4,7 @@ import { useUserAuthentication } from "../UserAuthentication";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel } from "@/components/ui/field";
+import { toast } from "sonner"
 
 type SignUpModalProps = {
   eventId: number;
@@ -23,7 +24,7 @@ export default function SignUpModal({ eventId, onSuccess }: SignUpModalProps) {
     if (!user) return;
 
     try {
-      const res = await fetch("http://localhost:5000/attendances/me", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/attendances/me`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -123,6 +124,7 @@ export default function SignUpModal({ eventId, onSuccess }: SignUpModalProps) {
                   <Button
                     type="submit"
                     className="bg-rose-500 hover:bg-rose-600 text-white flex-1"
+                    onClick={()=> toast.success("Successfully signed up to the event!")}
                   >
                     Submit
                   </Button>

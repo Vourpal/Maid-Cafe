@@ -51,7 +51,7 @@ export default function Account() {
     }
 
     try {
-      const res = await fetch(`http://localhost:5000/users/${user.id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${user.id}`, {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -82,7 +82,7 @@ export default function Account() {
     if (!editingField || !user) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/users/${user.id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${user.id}`, {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

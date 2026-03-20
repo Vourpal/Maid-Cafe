@@ -15,7 +15,7 @@ export default function NavBar() {
   const { user, setUser, loading } = useUserAuthentication();
 
   async function handleLogout() {
-    await fetch("http://localhost:5000/auth/logout", {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
       method: "POST",
       credentials: "include",
     });

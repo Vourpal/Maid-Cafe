@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel } from "@/components/ui/field";
+import { toast } from "sonner"
 
 export default function AddEvent() {
   const router = useRouter();
@@ -25,7 +26,7 @@ export default function AddEvent() {
     if (!user) return;
 
     try {
-      const res = await fetch("http://localhost:5000/events", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/events`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -171,6 +172,7 @@ export default function AddEvent() {
                   <Button
                     type="submit"
                     className="bg-rose-500 hover:bg-rose-600 text-white flex-1"
+                    onClick={() => toast.success("Event has been created!")}
                   >
                     Create Event
                   </Button>
@@ -178,7 +180,7 @@ export default function AddEvent() {
                     type="button"
                     variant="outline"
                     className="border-rose-200 text-gray-600 flex-1"
-                    onClick={() => setForm(false)}
+                    onClick={() => setForm(false) }
                   >
                     Cancel
                   </Button>

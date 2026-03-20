@@ -1,6 +1,5 @@
 import EventCards from "./EventCards";
 import EventPagination from "./Pagination";
-import Pagination from "./Pagination";
 
 export default async function Event({ searchParams }) {
   const params = await searchParams;
@@ -10,7 +9,7 @@ export default async function Event({ searchParams }) {
   const min_capacity = params.min_capacity ?? null;
   const search = params.search_term ?? null;
 
-  const url = new URL("http://127.0.0.1:5000/events");
+  const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/events`);
   url.searchParams.set("page", page);
   url.searchParams.set("quantity", quantity);
   if (search) {
