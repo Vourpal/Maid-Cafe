@@ -2,6 +2,8 @@
 import { useRouter } from "next/navigation";
 import { useUserAuthentication } from "../UserAuthentication";
 import { useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 
 type EventFiltersProps = {
   showMine: boolean;
@@ -33,27 +35,41 @@ export default function EventFilters({
     return () => clearTimeout(timer);
   }, [searchTerm, router]);
 
-  return (
-    <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-      {/* Location filter */}
-      <select onChange={handleLocationChange}>
+return (
+  <div className="flex flex-wrap gap-4 items-end mb-6">
+    <Field>
+      <FieldLabel>Location</FieldLabel>
+      <select
+        onChange={handleLocationChange}
+        className="border border-rose-200 rounded-md px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-rose-300"
+      >
         <option value="">All</option>
         <option value="tampa">Tampa</option>
         <option value="orlando">Orlando</option>
       </select>
-      <label>Search Bar</label>{" "}
-      <input type="text" onChange={(e) => setSearchTerm(e.target.value)} />
-      {/* Show only my events */}
-      {user && (
-        <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <input
-            type="checkbox"
-            checked={showMine}
-            onChange={handleMineToggle}
-          />
-          Show my events
-        </label>
-      )}
-    </div>
-  );
+    </Field>
+
+    <Field>
+      <FieldLabel>Search</FieldLabel>
+      <Input
+        type="text"
+        placeholder="Search events..."
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="border-rose-200 focus:ring-rose-300 w-48"
+      />
+    </Field>
+
+    {user && (
+      <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer pb-1">
+        <input
+          type="checkbox"
+          checked={showMine}
+          onChange={handleMineToggle}
+          className="accent-rose-500"
+        />
+        Show my events
+      </label>
+    )}
+  </div>
+);
 }

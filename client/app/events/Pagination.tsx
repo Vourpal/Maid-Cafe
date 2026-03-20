@@ -1,6 +1,15 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from "@/components/ui/pagination";
 
 type PaginationProps = {
   currentPage: number;
@@ -8,7 +17,7 @@ type PaginationProps = {
   quantity: number;
 };
 
-export default function Pagination({
+export default function EventPagination({
   currentPage,
   total,
   quantity,
@@ -16,14 +25,9 @@ export default function Pagination({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  function getPageWindow(
-    currentPage: number,
-    total: number,
-    quantity: number,
-    maxVisible = 5,
-  ) {
-    const totalPages = Math.ceil(total / quantity);
+  const totalPages = Math.ceil(total / quantity);
 
+  function getPageWindow(maxVisible = 5) {
     if (totalPages <= maxVisible) {
       return Array.from({ length: totalPages }, (_, i) => i + 1);
     }
@@ -48,8 +52,7 @@ export default function Pagination({
     );
   }
 
-  const pages = getPageWindow(currentPage, total, quantity);
-  const totalPages = Math.ceil(total / quantity);
+  const pages = getPageWindow();
 
   function goToPage(page: number) {
     const params = new URLSearchParams(searchParams.toString());
@@ -57,37 +60,79 @@ export default function Pagination({
     router.push(`/events?${params.toString()}`);
   }
 
+  if (totalPages <= 1) return null;
+
   return (
-    <div style={{ display: "flex", gap: "8px", marginTop: "20px" }}>
-      {/* Previous */}
-      <button
-        disabled={currentPage === 1}
-        onClick={() => goToPage(currentPage - 1)}
-      >
-        Prev
-      </button>
+    <div className="mt-6">
+      <Pagination>
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationPrevious
+              onClick={() => goToPage(currentPage - 1)}
+              className={
+                currentPage === 1
+                  ? "pointer-events-none opacity-50"
+                  : "cursor-pointer hover:text-rose-500"
+              }
+            />
+          </PaginationItem>
 
-      {/* Page numbers */}
-      {pages.map((p) => (
-        <button
-          key={p}
-          onClick={() => goToPage(p)}
-          style={{
-            fontWeight: p === currentPage ? "bold" : "normal",
-            textDecoration: p === currentPage ? "underline" : "none",
-          }}
-        >
-          {p}
-        </button>
-      ))}
+          {pages[0] > 1 && (
+            <>
+              <PaginationItem>
+                <PaginationLink
+                  onClick={() => goToPage(1)}
+                  className="cursor-pointer hover:text-rose-500"
+                >
+                  1
+                </PaginationLink>
+              </PaginationItem>
+              {pages[0] > 2 && <PaginationEllipsis />}
+            </>
+          )}
 
-      {/* Next */}
-      <button
-        disabled={currentPage === totalPages}
-        onClick={() => goToPage(currentPage + 1)}
-      >
-        Next
-      </button>
+          {pages.map((p) => (
+            <PaginationItem key={p}>
+              <PaginationLink
+                isActive={p === currentPage}
+                onClick={() => goToPage(p)}
+                className={
+                  p === currentPage
+                    ? "bg-rose-500 text-white border-rose-500 cursor-pointer"
+                    : "cursor-pointer hover:text-rose-500"
+                }
+              >
+                {p}
+              </PaginationLink>
+            </PaginationItem>
+          ))}
+
+          {pages[pages.length - 1] < totalPages && (
+            <>
+              {pages[pages.length - 1] < totalPages - 1 && <PaginationEllipsis />}
+              <PaginationItem>
+                <PaginationLink
+                  onClick={() => goToPage(totalPages)}
+                  className="cursor-pointer hover:text-rose-500"
+                >
+                  {totalPages}
+                </PaginationLink>
+              </PaginationItem>
+            </>
+          )}
+
+          <PaginationItem>
+            <PaginationNext
+              onClick={() => goToPage(currentPage + 1)}
+              className={
+                currentPage === totalPages
+                  ? "pointer-events-none opacity-50"
+                  : "cursor-pointer hover:text-rose-500"
+              }
+            />
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
     </div>
   );
 }

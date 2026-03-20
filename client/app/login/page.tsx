@@ -4,6 +4,10 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUserAuthentication } from "../UserAuthentication";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,10 +19,9 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-
   const [rememberMe, setRememberMe] = useState(false);
 
-   function handleLoginDuration() {
+  function handleLoginDuration() {
     setRememberMe((prev) => !prev);
   }
 
@@ -54,45 +57,79 @@ export default function LoginPage() {
     router.push("/login");
   }
 
+  if (user) {
+    return (
+      <div className="max-w-md mx-auto px-4 py-10 text-center">
+        <p className="text-gray-700 mb-4">Logged in as <span className="font-semibold text-rose-500">{user.first_name}</span></p>
+        <Button
+          onClick={handleLogout}
+          variant="outline"
+          className="border-rose-300 text-rose-500 hover:bg-rose-50 rounded-full"
+        >
+          Logout
+        </Button>
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <h1>Login</h1>
+    <div className="max-w-md mx-auto px-4 py-10">
+      <Card className="border-rose-200 shadow-sm">
+        <CardHeader className="text-center">
+          <CardTitle className="text-rose-500 text-2xl">🎀 Welcome Back</CardTitle>
+          <p className="text-gray-400 text-sm">Sign in to your account</p>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <FieldGroup>
+              <Field>
+                <FieldLabel>Email</FieldLabel>
+                <Input
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </Field>
+              <Field>
+                <FieldLabel>Password</FieldLabel>
+                <Input
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </Field>
+            </FieldGroup>
 
-      {user ? (
-        <div>
-          <p>Logged in as {user.first_name}</p>
-          <button onClick={handleLogout}>Logout</button>
-        </div>
-      ) : (
-        <form onSubmit={handleLogin}>
-          <input
-            type="email"
-            placeholder="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <input
-            type="text"
-            placeholder="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <button type="submit">Login</button>
-          <label
-            style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
-          >
-            <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={handleLoginDuration}
-            />
-            Remember me
-          </label>{" "}
-        </form>
-      )}
+            <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={handleLoginDuration}
+                className="accent-rose-500"
+              />
+              Remember me
+            </label>
 
-      <Link href={"/login/newUser"}>New User</Link>
-      {error && <p>{error}</p>}
+            {error && <p className="text-red-500 text-sm">{error}</p>}
+
+            <Button
+              type="submit"
+              className="w-full bg-rose-500 hover:bg-rose-600 text-white rounded-full"
+            >
+              Login
+            </Button>
+
+            <p className="text-center text-sm text-gray-500">
+              New here?{" "}
+              <Link href="/login/newUser" className="text-rose-500 hover:underline">
+                Create an account
+              </Link>
+            </p>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

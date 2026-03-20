@@ -7,6 +7,9 @@ import AddEvent from "./AddEvent";
 import EditAttendance from "./EditAttendance";
 import EditEvents from "./EditEvent";
 import SignUpModal from "./SignUpModal";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 type EventCardProps = {
   initialEvents: Event[];
@@ -17,6 +20,15 @@ type AttendanceRecord = {
   id: number;
   event_id: number;
 };
+
+function getStatusColor(status: string) {
+  switch (status) {
+    case "published": return "default";
+    case "cancelled": return "destructive";
+    case "draft": return "secondary";
+    default: return "secondary";
+  }
+}
 
 export default function EventCards({
   initialEvents,
@@ -33,7 +45,6 @@ export default function EventCards({
 
   useEffect(() => {
     if (!user) return;
-
     fetch("http://localhost:5000/attendances/me", {
       credentials: "include",
     })
@@ -64,80 +75,78 @@ export default function EventCards({
   if (loading) return null;
 
   return (
-    <div>
-      <div>
+    <div className="max-w-3xl mx-auto px-4 py-6">
+      <div className="flex items-center justify-between mb-6">
         {user && user.admin && <AddEvent />}
         <EventFilters showMine={showMine} setShowMine={setShowMine} />
+      </div>
 
+      <div className="flex flex-col gap-4">
         {displayedEvents.map((event) => {
           const isAttending = attendances.some((a) => a.event_id === event.id);
-          const currentAttendance = attendances.find(
-            (a) => a.event_id === event.id,
-          );
+          const currentAttendance = attendances.find((a) => a.event_id === event.id);
 
           return (
-            <div key={event.id}>
-              <h1>{event.title}</h1>
+            <Card key={event.id}>
+              <CardHeader className="flex flex-row items-start justify-between">
+                <CardTitle>{event.title}</CardTitle>
+                <Badge variant={getStatusColor(event.status)}>
+                  {event.status}
+                </Badge>
+              </CardHeader>
 
-              <div>
-                Will be located at {event.location} with a max of{" "}
-                {event.max_attendees} participants... final date to sign up is{" "}
-                {event.end_datetime} The status of this thingy is ermm..:{" "}
-                {event.status}
-              </div>
+              <CardContent className="flex flex-col gap-3">
+                <div className="text-sm text-muted-foreground">
+                  {event.location && <span>📍 {event.location} · </span>}
+                  {event.max_attendees && <span>👥 {event.max_attendees} spots · </span>}
+                  <span>📅 {new Date(event.end_datetime).toLocaleDateString()}</span>
+                </div>
 
-              <div>Description: {event.description}</div>
+                {event.description && (
+                  <p className="text-sm">{event.description}</p>
+                )}
 
-              {/* SIGN UP / LEAVE BUTTONS */}
-              {user && (
-                <>
-                  {isAttending ? (
-                    <button
-                      onClick={() => handleLeave(event.id)}
-                      className="px-4 py-2 bg-red-600 text-white rounded"
-                    >
-                      Leave Event
-                    </button>
-                  ) : (
-                    <SignUpModal
-                      eventId={event.id}
-                      onSuccess={(newAttendance) =>
-                        setAttendances([...attendances, newAttendance])
-                      }
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {user && (
+                    isAttending ? (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleLeave(event.id)}
+                      >
+                        Leave Event
+                      </Button>
+                    ) : (
+                      <SignUpModal
+                        eventId={event.id}
+                        onSuccess={(newAttendance) =>
+                          setAttendances([...attendances, newAttendance])
+                        }
+                      />
+                    )
+                  )}
+
+                  {user && isAttending && currentAttendance && (
+                    <EditAttendance attendanceId={currentAttendance.id} />
+                  )}
+
+                  {user && user.admin && (
+                    <EditEvents
+                      eventIdProp={event.id}
+                      titleProp={event.title}
+                      descriptionProp={event.description}
+                      startDateProp={event.start_datetime}
+                      endDateProp={event.end_datetime}
+                      locationProp={event.location}
+                      maxAttendeesProp={event.max_attendees}
+                      statusProps={event.status}
                     />
                   )}
-                </>
-              )}
-
-              {/* EDIT ATTENDANCE (only if attending) */}
-              {user && isAttending && currentAttendance && (
-                <EditAttendance attendanceId={currentAttendance.id} />
-              )}
-
-              {/* ADMIN EVENT EDIT */}
-              {user && user.admin && (
-                <EditEvents
-                  eventIdProp={event.id}
-                  titleProp={event.title}
-                  descriptionProp={event.description}
-                  startDateProp={event.start_datetime}
-                  endDateProp={event.end_datetime}
-                  locationProp={event.location}
-                  maxAttendeesProp={event.max_attendees}
-                  statusProps={event.status}
-                />
-              )}
-            </div>
+                </div>
+              </CardContent>
+            </Card>
           );
         })}
-
-        <span>I&apos;m a silly little page {page}</span>
-
-        {user ? (
-          <p className="text-green-600">Hey stinky you are logged in</p>
-        ) : (
-          <p className="text-red-500">You are not logged in</p>
-        )}
       </div>
     </div>
   );

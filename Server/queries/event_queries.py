@@ -129,6 +129,10 @@ def update_event(db, event_id: int, event: EventUpdate):
     if event.max_attendees is not None:
         fields.append("max_attendees = %s")
         values.append(event.max_attendees)
+    
+    if event.status is not None:
+        fields.append("status = %s")
+        values.append(event.status)
 
     if not fields:
         return None

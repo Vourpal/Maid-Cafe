@@ -1,7 +1,11 @@
-  //eventually add a referral code so that only people who the admins allowed can make accs
 "use client";
-// Dummy account: Guest Pass123
+
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import Link from "next/link";
 
 export default function NewUser() {
   const [firstName, setFirstName] = useState("");
@@ -39,54 +43,85 @@ export default function NewUser() {
   }
 
   return (
-    <div>
-      <h1>Welcome to the maid cafe</h1>
-      <div>
-        Please provide the referral code along with your user information to
-        become a part of the team!
-      </div>
+    <div className="max-w-md mx-auto px-4 py-10">
+      <Card className="border-rose-200 shadow-sm">
+        <CardHeader className="text-center">
+          <CardTitle className="text-rose-500 text-2xl">🎀 Join the Team</CardTitle>
+          <p className="text-gray-400 text-sm">
+            Please provide your information to become a part of the team!
+          </p>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <FieldGroup>
+              <Field>
+                <FieldLabel>First Name</FieldLabel>
+                <Input
+                  type="text"
+                  placeholder="First Name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                />
+              </Field>
+              <Field>
+                <FieldLabel>Last Name</FieldLabel>
+                <Input
+                  type="text"
+                  placeholder="Last Name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                />
+              </Field>
+              <Field>
+                <FieldLabel>Email</FieldLabel>
+                <Input
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </Field>
+              <Field>
+                <FieldLabel>Username</FieldLabel>
+                <Input
+                  type="text"
+                  placeholder="Username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
+              </Field>
+              <Field>
+                <FieldLabel>Password</FieldLabel>
+                <Input
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </Field>
+            </FieldGroup>
 
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="First Name"
-          value={firstName}
-          onChange={(e) => setFirstName(e.target.value)}
-        />
+            {error && <p className="text-red-500 text-sm">{error}</p>}
+            {success && (
+              <p className="text-green-600 text-sm">{success}</p>
+            )}
 
-        <input
-          type="text"
-          placeholder="Last Name"
-          value={lastName}
-          onChange={(e) => setLastName(e.target.value)}
-        />
+            <Button
+              type="submit"
+              className="w-full bg-rose-500 hover:bg-rose-600 text-white rounded-full"
+            >
+              Create Account
+            </Button>
 
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-
-        <input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
-
-        <input
-          type="text"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-
-        <button type="submit">Create Account</button>
-      </form>
-
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      {success && <p style={{ color: "green" }}>{success}</p>}
+            <p className="text-center text-sm text-gray-500">
+              Already have an account?{" "}
+              <Link href="/login" className="text-rose-500 hover:underline">
+                Sign in
+              </Link>
+            </p>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

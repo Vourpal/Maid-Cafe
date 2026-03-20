@@ -1,4 +1,5 @@
 import EventCards from "./EventCards";
+import EventPagination from "./Pagination";
 import Pagination from "./Pagination";
 
 export default async function Event({ searchParams }) {
@@ -7,15 +8,14 @@ export default async function Event({ searchParams }) {
   const page = params.page ?? 1;
   const quantity = params.quantity ?? 10;
   const min_capacity = params.min_capacity ?? null;
-  const search = params.search_term ?? null
+  const search = params.search_term ?? null;
 
   const url = new URL("http://127.0.0.1:5000/events");
   url.searchParams.set("page", page);
   url.searchParams.set("quantity", quantity);
-  if (search){
-      url.searchParams.set("search_term",search)
+  if (search) {
+    url.searchParams.set("search_term", search);
   }
-
 
   if (min_capacity) {
     url.searchParams.set("min_capacity", min_capacity);
@@ -28,7 +28,7 @@ export default async function Event({ searchParams }) {
     <div>
       <p>yippee this is where we will test the events i guess?</p>
       <EventCards initialEvents={data.data?.events ?? []} initialPage={page} />
-      <Pagination
+      <EventPagination
         currentPage={Number(page)}
         total={data.data?.total ?? 0}
         quantity={Number(quantity)}

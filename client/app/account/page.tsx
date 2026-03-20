@@ -2,6 +2,11 @@
 
 import { useState } from "react";
 import { useUserAuthentication } from "../UserAuthentication";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 
 export default function Account() {
   const { user, loading, setUser } = useUserAuthentication();
@@ -15,12 +20,22 @@ export default function Account() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
-  if (loading) return null;
-  if (!user) return <div>You are not logged in.</div>;
+  if (loading)
+    return (
+      <div className="max-w-lg mx-auto px-4 py-10 space-y-4">
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+      </div>
+    );
 
-  // -----------------------------
-  // PASSWORD SUBMIT HANDLER
-  // -----------------------------
+  if (!user)
+    return (
+      <div className="max-w-lg mx-auto px-4 py-10 text-center text-gray-500">
+        You are not logged in.
+      </div>
+    );
+
   async function handlePasswordSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!user) return;
@@ -36,25 +51,21 @@ export default function Account() {
     }
 
     try {
-      const res = await fetch(
-        `http://localhost:5000/users/${user.id}`,
-        {
-          method: "PATCH",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            current_password: currentPassword,
-            password: newPassword,
-          }),
-        },
-      );
+      const res = await fetch(`http://localhost:5000/users/${user.id}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          current_password: currentPassword,
+          password: newPassword,
+        }),
+      });
 
       if (!res.ok) {
         setPasswordError("Incorrect current password or server error.");
         return;
       }
 
-      // Reset UI
       setChangingPassword(false);
       setCurrentPassword("");
       setNewPassword("");
@@ -66,24 +77,16 @@ export default function Account() {
     }
   }
 
-  // -----------------------------
-  // FIELD UPDATE HANDLER
-  // -----------------------------
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
-    if (!editingField) return;
-
-    if (!user) return;
+    if (!editingField || !user) return;
 
     try {
       const res = await fetch(`http://localhost:5000/users/${user.id}`, {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          [editingField]: newValue,
-        }),
+        body: JSON.stringify({ [editingField]: newValue }),
       });
 
       if (!res.ok) {
@@ -91,12 +94,7 @@ export default function Account() {
         return;
       }
 
-      // Update UI instantly
-      setUser({
-        ...user,
-        [editingField]: newValue,
-      });
-
+      setUser({ ...user, [editingField]: newValue });
       setEditingField(null);
     } catch (error) {
       console.error("Error updating user:", error);
@@ -104,164 +102,108 @@ export default function Account() {
   }
 
   return (
-    <div>
-      <h1>Account information</h1>
+    <div className="max-w-lg mx-auto px-4 py-10">
+      <Card className="border-rose-200 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-rose-500 text-2xl">🎀 My Account</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul className="space-y-4">
+            {[
+              { label: "First Name", field: "first_name", value: user.first_name },
+              { label: "Last Name", field: "last_name", value: user.last_name },
+              { label: "Email", field: "email", value: user.email },
+              { label: "Username", field: "username", value: user.username },
+            ].map(({ label, field, value }) => (
+              <li key={field} className="flex items-center justify-between border-b border-rose-100 pb-3">
+                <div>
+                  <p className="text-xs text-gray-400 uppercase tracking-wide">{label}</p>
+                  <p className="text-gray-800 font-medium">{value}</p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-rose-300 text-rose-500 hover:bg-rose-50"
+                  onClick={() => {
+                    setEditingField(field);
+                    setNewValue(value);
+                  }}
+                >
+                  Edit
+                </Button>
+              </li>
+            ))}
 
-      <div>
-        <ul className="space-y-4">
-          {/* FIRST NAME */}
-          <li>
-            First Name: {user.first_name}
-            <button
-              className="ml-2 px-4 py-2 bg-red-600 text-white rounded"
-              onClick={() => {
-                setEditingField("first_name");
-                setNewValue(user.first_name);
-              }}
-            >
-              Edit
-            </button>
-          </li>
+            <li className="flex items-center justify-between border-b border-rose-100 pb-3">
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide">Password</p>
+                <p className="text-gray-800 font-medium">••••••••</p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-rose-300 text-rose-500 hover:bg-rose-50"
+                onClick={() => setChangingPassword(true)}
+              >
+                Edit
+              </Button>
+            </li>
+          </ul>
 
-          {/* LAST NAME */}
-          <li>
-            Last Name: {user.last_name}
-            <button
-              className="ml-2 px-4 py-2 bg-red-600 text-white rounded"
-              onClick={() => {
-                setEditingField("last_name");
-                setNewValue(user.last_name);
-              }}
-            >
-              Edit
-            </button>
-          </li>
+          {/* PASSWORD FORM */}
+          {changingPassword && (
+            <form onSubmit={handlePasswordSubmit} className="mt-6 space-y-3">
+              {passwordError && <p className="text-red-500 text-sm">{passwordError}</p>}
+              <FieldGroup>
+                <Field>
+                  <FieldLabel>Current Password</FieldLabel>
+                  <Input type="password" onChange={(e) => setCurrentPassword(e.target.value)} />
+                </Field>
+                <Field>
+                  <FieldLabel>New Password</FieldLabel>
+                  <Input type="password" onChange={(e) => setNewPassword(e.target.value)} />
+                </Field>
+                <Field>
+                  <FieldLabel>Confirm New Password</FieldLabel>
+                  <Input type="password" onChange={(e) => setConfirmPassword(e.target.value)} />
+                </Field>
+              </FieldGroup>
+              <div className="flex gap-2">
+                <Button type="submit" className="bg-rose-500 hover:bg-rose-600 text-white">
+                  Save Password
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => { setChangingPassword(false); setPasswordError(""); }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          )}
 
-          {/* EMAIL */}
-          <li>
-            Email: {user.email}
-            <button
-              className="ml-2 px-4 py-2 bg-red-600 text-white rounded"
-              onClick={() => {
-                setEditingField("email");
-                setNewValue(user.email);
-              }}
-            >
-              Edit
-            </button>
-          </li>
-
-          {/* USERNAME */}
-          <li>
-            Username: {user.username}
-            <button
-              className="ml-2 px-4 py-2 bg-red-600 text-white rounded"
-              onClick={() => {
-                setEditingField("username");
-                setNewValue(user.username);
-              }}
-            >
-              Edit
-            </button>
-          </li>
-
-          {/* PASSWORD */}
-          <li>
-            Password
-            <button
-              className="ml-2 px-4 py-2 bg-red-600 text-white rounded"
-              onClick={() => setChangingPassword(true)}
-            >
-              Edit
-            </button>
-          </li>
-        </ul>
-      </div>
-
-      {/* PASSWORD FORM */}
-      {changingPassword && (
-        <form onSubmit={handlePasswordSubmit} className="mt-6 space-y-3">
-          <h2 className="font-semibold">Change Password</h2>
-
-          {passwordError && <div className="text-red-600">{passwordError}</div>}
-
-          <input
-            type="password"
-            placeholder="Current password"
-            className="border p-2 rounded w-full"
-            value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
-          />
-
-          <input
-            type="password"
-            placeholder="New password"
-            className="border p-2 rounded w-full"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-          />
-
-          <input
-            type="password"
-            placeholder="Confirm new password"
-            className="border p-2 rounded w-full"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-          />
-
-          <div>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded"
-            >
-              Save Password
-            </button>
-
-            <button
-              type="button"
-              className="ml-2 px-4 py-2 bg-gray-500 text-white rounded"
-              onClick={() => {
-                setChangingPassword(false);
-                setPasswordError("");
-              }}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      )}
-
-      {/* FIELD EDIT FORM */}
-      {editingField && (
-        <form onSubmit={handleSubmit} className="mt-6">
-          <label className="block mb-2 capitalize">
-            Edit {editingField.replace("_", " ")}
-          </label>
-
-          <input
-            className="border p-2 rounded w-full"
-            value={newValue}
-            onChange={(e) => setNewValue(e.target.value)}
-          />
-
-          <div className="mt-3">
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded"
-            >
-              Save
-            </button>
-
-            <button
-              type="button"
-              className="ml-2 px-4 py-2 bg-gray-500 text-white rounded"
-              onClick={() => setEditingField(null)}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      )}
+          {/* FIELD EDIT FORM */}
+          {editingField && (
+            <form onSubmit={handleSubmit} className="mt-6 space-y-3">
+              <FieldGroup>
+                <Field>
+                  <FieldLabel>Edit {editingField.replace("_", " ")}</FieldLabel>
+                  <Input value={newValue} onChange={(e) => setNewValue(e.target.value)} />
+                </Field>
+              </FieldGroup>
+              <div className="flex gap-2">
+                <Button type="submit" className="bg-rose-500 hover:bg-rose-600 text-white">
+                  Save
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setEditingField(null)}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

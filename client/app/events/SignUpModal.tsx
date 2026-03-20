@@ -1,6 +1,9 @@
 "use client";
 import { useState } from "react";
 import { useUserAuthentication } from "../UserAuthentication";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Field, FieldLabel } from "@/components/ui/field";
 
 type SignUpModalProps = {
   eventId: number;
@@ -35,13 +38,7 @@ export default function SignUpModal({ eventId, onSuccess }: SignUpModalProps) {
       if (!res.ok) throw new Error("Failed to sign up");
 
       const data = await res.json();
-
-      // 🔥 Update EventCards immediately
-      onSuccess({
-        id: data.data.id,
-        event_id: eventId,
-      });
-
+      onSuccess({ id: data.data.id, event_id: eventId });
       setForm(false);
     } catch (err) {
       console.error("Error signing up:", err);
@@ -50,12 +47,14 @@ export default function SignUpModal({ eventId, onSuccess }: SignUpModalProps) {
 
   return (
     <div>
-      <button
+      <Button
+        size="sm"
+        variant="outline"
+        className="border-rose-300 text-rose-500 hover:bg-rose-50"
         onClick={() => setForm(true)}
-        className="px-4 py-2 bg-blue-600 text-white rounded"
       >
         Sign Up
-      </button>
+      </Button>
 
       {form && (
         <>
@@ -67,70 +66,74 @@ export default function SignUpModal({ eventId, onSuccess }: SignUpModalProps) {
 
           {/* Modal wrapper */}
           <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-            <div className="bg-white p-6 rounded max-w-md w-full pointer-events-auto">
-              <button onClick={() => setForm(false)}>✕</button>
+            <div className="bg-white p-6 rounded-xl max-w-md w-full pointer-events-auto shadow-lg">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-rose-500 font-semibold text-lg">🎀 Sign Up</h2>
+                <button
+                  onClick={() => setForm(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
 
-              <form onSubmit={handleSignUp} className="flex flex-col gap-4 mt-3">
-                {/* STEP 1 — STATUS */}
-                <div>
-                  <p className="font-semibold">What is your status?</p>
+              <form onSubmit={handleSignUp} className="flex flex-col gap-4">
+                <Field>
+                  <FieldLabel>What is your status?</FieldLabel>
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
-                    className="border p-2 rounded w-full"
+                    className="border border-rose-200 rounded-md px-3 py-2 text-sm text-gray-700 bg-white w-full focus:outline-none focus:ring-2 focus:ring-rose-300"
                   >
                     <option value="going">Going</option>
                     <option value="maybe">Maybe</option>
                     <option value="not going">Not Going</option>
                   </select>
-                </div>
+                </Field>
 
-                {/* STEP 2 — ROLE */}
-                <div>
-                  <p className="font-semibold">Are you a driver or a rider?</p>
+                <Field>
+                  <FieldLabel>Are you a driver or a rider?</FieldLabel>
                   <select
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
-                    className="border p-2 rounded w-full"
+                    className="border border-rose-200 rounded-md px-3 py-2 text-sm text-gray-700 bg-white w-full focus:outline-none focus:ring-2 focus:ring-rose-300"
                   >
                     <option value="None">None</option>
                     <option value="Driver">Driver</option>
                     <option value="Passenger">Passenger</option>
                   </select>
-                </div>
+                </Field>
 
-                {/* STEP 3 — DRIVER SEATS */}
                 {role === "Driver" && (
-                  <div>
-                    <p className="font-semibold">How many people can you fit?</p>
-                    <input
+                  <Field>
+                    <FieldLabel>How many people can you fit?</FieldLabel>
+                    <Input
                       type="number"
                       placeholder="Available seats"
                       value={seatsAvailable ?? ""}
                       min={1}
                       max={10}
                       onChange={(e) => setSeatsAvailable(Number(e.target.value))}
-                      className="border p-2 rounded w-full"
+                      className="border-rose-200 focus:ring-rose-300"
                     />
-                  </div>
+                  </Field>
                 )}
 
-                {/* ACTION BUTTONS */}
-                <div className="flex gap-3">
-                  <button
+                <div className="flex gap-2 mt-2">
+                  <Button
                     type="submit"
-                    className="px-4 py-2 bg-green-600 text-white rounded"
+                    className="bg-rose-500 hover:bg-rose-600 text-white flex-1"
                   >
                     Submit
-                  </button>
-
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="outline"
+                    className="border-rose-200 text-gray-600 flex-1"
                     onClick={() => setForm(false)}
-                    className="px-4 py-2 bg-gray-300 rounded"
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               </form>
             </div>
