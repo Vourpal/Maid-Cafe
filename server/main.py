@@ -12,6 +12,7 @@ app = Flask(__name__)
 CORS(app, supports_credentials=True, origins=[
     "http://localhost:3000",
     "http://192.168.4.103:3000"
+    "https://maid-cafe-gxuv.vercel.app"
 ])
 
 # Register blueprints
