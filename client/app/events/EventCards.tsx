@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { authHeadersNoContent } from "@/lib/api";
+import EventInfo from "./EventInfo";
 
 type EventCardProps = {
   initialEvents: Event[];
@@ -24,10 +25,14 @@ type AttendanceRecord = {
 
 function getStatusColor(status: string) {
   switch (status) {
-    case "published": return "default";
-    case "cancelled": return "destructive";
-    case "draft": return "secondary";
-    default: return "secondary";
+    case "published":
+      return "default";
+    case "cancelled":
+      return "destructive";
+    case "draft":
+      return "secondary";
+    default:
+      return "secondary";
   }
 }
 
@@ -66,11 +71,14 @@ export default function EventCards({
     const attendance = attendances.find((a) => a.event_id === eventId);
     if (!attendance) return;
 
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/attendances/${attendance.id}`, {
-      method: "DELETE",
-      headers: authHeadersNoContent(),
-      // credentials: "include",
-    });
+    await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/attendances/${attendance.id}`,
+      {
+        method: "DELETE",
+        headers: authHeadersNoContent(),
+        // credentials: "include",
+      },
+    );
 
     setAttendances(attendances.filter((a) => a.event_id !== eventId));
   }
@@ -97,8 +105,12 @@ export default function EventCards({
       ) : (
         <div className="flex flex-col gap-4">
           {displayedEvents.map((event) => {
-            const isAttending = attendances.some((a) => a.event_id === event.id);
-            const currentAttendance = attendances.find((a) => a.event_id === event.id);
+            const isAttending = attendances.some(
+              (a) => a.event_id === event.id,
+            );
+            const currentAttendance = attendances.find(
+              (a) => a.event_id === event.id,
+            );
 
             return (
               <Card key={event.id}>
@@ -115,7 +127,9 @@ export default function EventCards({
                     {event.max_attendees && (
                       <span>👥 {event.max_attendees} spots · </span>
                     )}
-                    <span>📅 {new Date(event.end_datetime).toLocaleDateString()}</span>
+                    <span>
+                      📅 {new Date(event.end_datetime).toLocaleDateString()}
+                    </span>
                   </div>
 
                   {event.description && (
@@ -123,8 +137,8 @@ export default function EventCards({
                   )}
 
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {user && (
-                      isAttending ? (
+                    {user &&
+                      (isAttending ? (
                         <Button
                           variant="destructive"
                           size="sm"
@@ -139,8 +153,7 @@ export default function EventCards({
                             setAttendances([...attendances, newAttendance])
                           }
                         />
-                      )
-                    )}
+                      ))}
 
                     {user && isAttending && currentAttendance && (
                       <EditAttendance attendanceId={currentAttendance.id} />
@@ -158,6 +171,7 @@ export default function EventCards({
                         statusProps={event.status}
                       />
                     )}
+                    {user && user.admin && <EventInfo eventIdProp={event.id} />}
                   </div>
                 </CardContent>
               </Card>

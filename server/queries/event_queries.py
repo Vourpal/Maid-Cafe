@@ -1,4 +1,4 @@
-from models import Event, EventUpdate
+from models import AdminEventInfo, Event, EventUpdate
 
 
 def create_event(db, event: Event):
@@ -16,7 +16,7 @@ def create_event(db, event: Event):
             event.created_by,
             event.location,
             event.max_attendees,
-            event.status
+            event.status,
         ),
     )
     return db.fetchone()[0]
@@ -35,7 +35,17 @@ def get_event_by_id(db, event_id: int):
     if row is None:
         return None
 
-    id, title, description, start_date, end_date, created_by, location, max_attendees, status = row
+    (
+        id,
+        title,
+        description,
+        start_date,
+        end_date,
+        created_by,
+        location,
+        max_attendees,
+        status,
+    ) = row
     return Event(
         id=id,
         title=title,
@@ -45,7 +55,7 @@ def get_event_by_id(db, event_id: int):
         created_by=created_by,
         location=location,
         max_attendees=max_attendees,
-        status = status
+        status=status,
     )
 
 
@@ -60,7 +70,7 @@ def get_events_paginated(db, limit, offset, min_capacity=None, search=None):
     if min_capacity:
         query += " AND max_attendees >= %s"
         params.append(min_capacity)
-    
+
     if search:
         query += " AND (title ILIKE %s OR description ILIKE %s)"
         params.append(f"%{search}%")
@@ -84,7 +94,7 @@ def get_events_paginated(db, limit, offset, min_capacity=None, search=None):
             created_by=row[5],
             location=row[6],
             max_attendees=row[7],
-            status=row[8]
+            status=row[8],
         )
         for row in rows
     ]
@@ -129,7 +139,7 @@ def update_event(db, event_id: int, event: EventUpdate):
     if event.max_attendees is not None:
         fields.append("max_attendees = %s")
         values.append(event.max_attendees)
-    
+
     if event.status is not None:
         fields.append("status = %s")
         values.append(event.status)
@@ -161,3 +171,57 @@ def delete_event(db, event_id: int):
     )
     row = db.fetchone()
     return row[0] if row else None
+
+
+def get_admin_event_info(db, event_id: int):
+
+    # First get the event title and aggregates
+    db.execute(
+        """
+        SELECT 
+            events.title,
+            COUNT(CASE WHEN attendances.role = 'Driver' THEN 1 END) AS driver_count,
+            COALESCE(SUM(attendances.seats_available), 0) AS passenger_count
+        FROM events
+        LEFT JOIN attendances ON events.id = attendances.event_id
+        WHERE events.id = %s
+        GROUP BY events.title;
+        """,
+        (event_id,),
+    )
+    summary = db.fetchone()
+    if not summary:
+        return None
+
+    # Then get individual attendees
+    db.execute(
+        """
+        SELECT 
+            users.first_name,
+            users.last_name,
+            attendances.status,
+            attendances.role,
+            attendances.seats_available
+        FROM attendances
+        INNER JOIN users ON attendances.user_id = users.id
+        WHERE attendances.event_id = %s;
+        """,
+        (event_id,),
+    )
+    rows = db.fetchall()
+
+    return AdminEventInfo(
+        title=summary[0],
+        driver_count=summary[1],
+        passenger_count=summary[2],
+        attendees=[
+            {
+                "first_name": row[0],
+                "last_name": row[1],
+                "status": row[2],
+                "role": row[3],
+                "seats_available": row[4],
+            }
+            for row in rows
+        ],
+    )

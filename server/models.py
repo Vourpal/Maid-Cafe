@@ -62,6 +62,11 @@ class EventUpdate(BaseModel):
     max_attendees: int | None = None
     status: str | None = None
 
+class AdminEventInfo(BaseModel):
+    title: str
+    driver_count: int
+    passenger_count: int = 0
+    attendees: list[dict] = []
 
 class NewAttendance(BaseModel):
     user_id: int
