@@ -93,7 +93,7 @@ export default function EventInfo({ eventIdProp }: InfoProps) {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-[500px] max-h-[80vh]"
+            className="w-125 max-h-[80vh]"
           >
             <Card className="border-rose-200 shadow-lg">
               <CardHeader className="flex flex-row items-start justify-between">

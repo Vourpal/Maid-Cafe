@@ -3,8 +3,7 @@ from flask import jsonify
 from contextlib import contextmanager
 
 
-from db import connect_db
-
+from db import connect_db, release_db 
 
 @contextmanager
 def get_db():
@@ -16,7 +15,7 @@ def get_db():
         conn.rollback()
         raise
     finally:
-        conn.close()
+        release_db(conn)    # ← was conn.close()
 
 
 # ── Response helpers ──────────────────────────────────────────────────────────
