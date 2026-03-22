@@ -57,13 +57,15 @@ export default function EventInfo({ eventIdProp }: InfoProps) {
         },
       );
 
-      if (!res.ok) {
+      const json: { data: EventDetails } = await res.json();
+
+      // Check if attendees array is empty
+      if (!json.data.attendees || json.data.attendees.length === 0) {
         toast.error("No details for this event yet!");
         return;
       }
 
-      const data: { data: EventDetails } = await res.json();
-      setDetails(data.data);
+      setDetails(json.data);
       setIsOpen(true);
     } catch (err) {
       console.error("Error finding info", err);
