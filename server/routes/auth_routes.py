@@ -1,21 +1,17 @@
 from flask import Blueprint, jsonify, make_response, request
 import bcrypt
 
-from db import connect_db
 from queries.user_queries import get_me, get_user_by_email
-from auth import create_token, verify_token
+from auth import create_token
 from middleware import require_auth
-from utils import success_response, APIError
+from utils import success_response, APIError, get_db
 
 auth_bp = Blueprint("auth", __name__)
 
 
 @auth_bp.route("/auth/login", methods=["POST"])
 def login():
-    conn = connect_db()
-    cur = conn.cursor()
-
-    try:
+    with get_db() as (conn, cur):
         data = request.get_json()
         remember_me = data.get("remember_me")
         email = data.get("email")
@@ -31,7 +27,7 @@ def login():
 
         token = create_token(user.id, remember_me)
 
-        #This is for localstorage
+        # This is for localstorage
         return jsonify({
             "success": True,
             "data": {
@@ -45,7 +41,7 @@ def login():
             },
             "error": None,
         })
-    
+
         # This is for cookies
 
         # response = make_response(
@@ -63,7 +59,6 @@ def login():
         #         })
         #     )
 
-
         # response.set_cookie(
         #     "token",
         #     token,
@@ -75,32 +70,19 @@ def login():
         # )
         # return response
 
-    finally:
-        conn.close()
-
 
 @auth_bp.route("/auth/me", methods=["GET"])
 @require_auth
 def get_current_user(user_id):
-
-    conn = connect_db()
-    cur = conn.cursor()
-
-    try:
+    with get_db() as (conn, cur):
         user = get_me(cur, user_id)
-
-        user_dict = user.model_dump()
-
-        return success_response(user_dict)
-    finally:
-        conn.close()
+        return success_response(user.model_dump())
 
 
 @auth_bp.route("/auth/logout", methods=["POST"])
 def logout():
-
-    # for cookies, make sure to change samsite to None when deploying...
-    #response = make_response({"message": "Logged out successfully"})
-    #response.delete_cookie("token", path="/", samesite="Lax")
-    #return response
+    # for cookies, make sure to change samesite to None when deploying...
+    # response = make_response({"message": "Logged out successfully"})
+    # response.delete_cookie("token", path="/", samesite="Lax")
+    # return response
     return jsonify({"success": True, "message": "Logged out"})

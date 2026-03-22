@@ -12,3 +12,9 @@ backend:
 
 install:
 	.venv/Scripts/python -m pip install $(package)
+
+test:
+	.venv/Scripts/python -m pytest tests/ -v
+
+requirements:
+	.venv/Scripts/python -m pip freeze > requirements.txt
