@@ -22,8 +22,32 @@ def create_user(db, user: UserAuthorization):
     return db.fetchone()[0]
     # Do not commit inside queries — only commit in routes to avoid partial writes
 
-#TODO: consider adding isActive in this for future reference
-def get_me(db,user_id: int):
+
+def get_users(db):
+    db.execute("""
+        SELECT id, first_name, last_name, email, username, admin
+        FROM users
+    """)
+
+    data = db.fetchall()
+    if not data:
+        return []
+
+    return [
+        UserMe(
+            id=id,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            username=username,
+            admin=admin
+        )
+        for (id, first_name, last_name, email, username, admin) in data
+    ]
+
+
+# TODO: consider adding isActive in this for future reference
+def get_me(db, user_id: int):
     db.execute(
         """
         SELECT id, first_name, last_name, email, username, admin
@@ -37,7 +61,14 @@ def get_me(db,user_id: int):
         return None
 
     id, first_name, last_name, email, username, admin = row
-    return UserMe(first_name=first_name, last_name=last_name, email=email, username=username, id=id, admin=admin)
+    return UserMe(
+        first_name=first_name,
+        last_name=last_name,
+        email=email,
+        username=username,
+        id=id,
+        admin=admin,
+    )
 
 
 def get_user_by_id(db, user_id: int):
@@ -54,7 +85,9 @@ def get_user_by_id(db, user_id: int):
         return None
 
     first_name, last_name, email, username = row
-    return UserBase(first_name=first_name, last_name=last_name, email=email, username=username)
+    return UserBase(
+        first_name=first_name, last_name=last_name, email=email, username=username
+    )
 
 
 def get_user_by_email(db, email: str):

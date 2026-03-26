@@ -8,6 +8,7 @@ from queries.user_queries import (
     get_user_by_email,
     get_user_by_id,
     create_user,
+    get_users,
     update_user,
     delete_user,
 )
@@ -17,13 +18,21 @@ from utils import success_response, error_response, APIError, get_db
 user_bp = Blueprint("users", __name__)
 
 
-@user_bp.route("/users", methods=["POST"])
+@user_bp.route("/users", methods=["GET"])
+@require_admin
+def get_all_users(user_id):
+    with get_db() as (conn, cur):
+        data = get_users(cur)
+        return success_response([u.model_dump() for u in data], 200)
+
+
+@user_bp.route("/", methods=["POST"])
 def create_new_user():
     try:
         with get_db() as (conn, cur):
             data = request.get_json()
 
-            try:                                    # ← wrap just the validation
+            try:  # ← wrap just the validation
                 reg_data = UserRegister(**data)
             except ValidationError as e:
                 raise APIError("VALIDATION_ERROR", str(e), 422)
@@ -51,12 +60,15 @@ def create_new_user():
             raise APIError("DUPLICATE_USERNAME", "Username already in use", 409)
         raise APIError("DUPLICATE_FIELD", "A unique field already exists", 409)
 
+
 @user_bp.route("/users/<int:target_user_id>", methods=["GET"])
 def user_get(target_user_id):
     with get_db() as (conn, cur):
         user = get_user_by_id(cur, target_user_id)
         if user is None:
-            raise APIError("USER_NOT_FOUND", f"User {target_user_id} does not exist", 404)
+            raise APIError(
+                "USER_NOT_FOUND", f"User {target_user_id} does not exist", 404
+            )
         return success_response(user.model_dump(), 200)
 
 
@@ -94,5 +106,7 @@ def user_detail(user_id, target_user_id):
         elif request.method == "DELETE":
             deleted_user = delete_user(cur, target_user_id)
             if deleted_user is None:
-                raise APIError("USER_NOT_FOUND", f"User {target_user_id} does not exist", 404)
+                raise APIError(
+                    "USER_NOT_FOUND", f"User {target_user_id} does not exist", 404
+                )
             return success_response({"deleted": deleted_user}, 200)
