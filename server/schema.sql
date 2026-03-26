@@ -39,7 +39,8 @@ CREATE TABLE IF NOT EXISTS attendances (
     role VARCHAR(10),
     seats_available INT,
     FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+    UNIQUE (user_id, event_id)
 );
 
 -- Tasks
@@ -56,4 +57,42 @@ CREATE TABLE IF NOT EXISTS tasks (
     FOREIGN KEY (created_by) REFERENCES users(id),
     FOREIGN KEY (assigned_to) REFERENCES users(id),
     FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS practice_sessions (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(100) NOT NULL,
+    location VARCHAR(100),
+    date TIMESTAMP NOT NULL,
+    notes VARCHAR(255)
+);
+
+-- practices
+
+CREATE TABLE IF NOT EXISTS practices (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    practice_session_id INTEGER NOT NULL,
+    attended BOOLEAN NOT NULL DEFAULT TRUE,
+    late BOOLEAN NOT NULL DEFAULT FALSE,
+    notes VARCHAR,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (practice_session_id) REFERENCES practice_sessions(id)
+);
+
+CREATE TABLE IF NOT EXISTS routines (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    notes TEXT
+);
+
+CREATE TABLE IF NOT EXISTS practice_session_routines (
+    id SERIAL PRIMARY KEY,
+    practice_session_id INTEGER NOT NULL,
+    routine_id INTEGER NOT NULL,
+
+    FOREIGN KEY (routine_id) REFERENCES routines(id) ON DELETE CASCADE,
+    FOREIGN KEY (practice_session_id) REFERENCES practice_sessions(id) ON DELETE CASCADE,
+
+    UNIQUE (practice_session_id, routine_id)
 );
