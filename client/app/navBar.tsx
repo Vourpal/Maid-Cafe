@@ -63,9 +63,9 @@ export default function NavBar() {
 
           {user && user.admin && (
             <NavigationMenuItem>
-              <Link href="/attendance">
+              <Link href="/practice">
                 <Button variant="ghost" className="text-gray-700 hover:text-rose-500">
-                  Attendance
+                  Practice
                 </Button>
               </Link>
             </NavigationMenuItem>
