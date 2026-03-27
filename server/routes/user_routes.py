@@ -17,7 +17,7 @@ from utils import success_response, error_response, APIError, get_db
 
 user_bp = Blueprint("users", __name__)
 
-
+#TODO: add validation errors
 @user_bp.route("/users", methods=["GET"])
 @require_admin
 def get_all_users(user_id):

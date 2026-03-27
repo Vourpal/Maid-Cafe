@@ -9,3 +9,11 @@ export type Event = {
   max_attendees: number | null;
   status: string;
 };
+
+export type PracticeSessions = {
+  id: number;
+  title: string;
+  location: string;
+  date: string;
+  notes: string;
+};

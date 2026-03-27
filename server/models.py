@@ -62,11 +62,13 @@ class EventUpdate(BaseModel):
     max_attendees: int | None = None
     status: str | None = None
 
+
 class AdminEventInfo(BaseModel):
     title: str
     driver_count: int
     passenger_count: int = 0
     attendees: list[dict] = []
+
 
 class NewAttendance(BaseModel):
     user_id: int
@@ -86,10 +88,11 @@ class Attendance(BaseModel):
     role: str | None = None
     seats_available: int | None = None
 
+
 class UpdatedAttendance(BaseModel):
-    status : str | None = None
+    status: str | None = None
     seats_available: int | None = None
-    role : str | None = None
+    role: str | None = None
 
 
 class Task(BaseModel):
@@ -101,3 +104,11 @@ class Task(BaseModel):
     due_date: datetime | None = None
     event_id: int | None = None
     completed: bool = False
+
+
+class PracticeSession(BaseModel):
+    id: int | None = None
+    title: str
+    location: str | None = None
+    date: datetime
+    notes: str | None = None  # also make notes optional

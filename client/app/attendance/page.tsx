@@ -6,14 +6,23 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 
 import { Button } from "@/components/ui/button";
 import { authHeadersNoContent } from "@/lib/api";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUserAuthentication } from "../UserAuthentication";
+import AddPractice from "./AddPractice";
 
 type CalendarEvent = {
   title: string;
   start: Date;
   end: Date;
   resource?: unknown; // optional extra data
+};
+
+type PracticeSessions = {
+  id: number;
+  title: string;
+  location: string;
+  date: string;
+  notes: string;
 };
 
 const localizer = dateFnsLocalizer({
@@ -32,6 +41,7 @@ type Attendance = {
   username: string;
 };
 export default function Attendance() {
+  const [sessions, setSessions] = useState<PracticeSessions[]>([]);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [date, setDate] = useState(new Date());
   const { user } = useUserAuthentication();
@@ -47,12 +57,39 @@ export default function Attendance() {
     const data = await res.json();
     setAttendance(data.data);
   }
+
+  async function fetchPracticeSessions() {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/practice-sessions`,
+      {
+        method: "GET",
+        headers: authHeadersNoContent(),
+      },
+    );
+
+    const data = await res.json();
+    return data.data;
+  }
+
+  useEffect(() => {
+    fetchPracticeSessions().then((data) => {
+      setSessions(data);
+    });
+  }, []);
+
+  const calendarEvents: CalendarEvent[] = sessions.map((session) => ({
+  title: session.title,
+  start: new Date(session.date), // convert string → Date
+  end: new Date(session.date),   // same time for now; you can add duration if needed
+  resource: session,             // optional, keeps full session data
+}));
+
   if (!user || !user.admin) return;
   return (
     <div>
       <Calendar
         localizer={localizer}
-        events={[]} // array of CalendarEvent
+        events={calendarEvents} // array of CalendarEvent
         startAccessor="start" // which field is the start date
         endAccessor="end" // which field is the end date
         date={date}
@@ -60,12 +97,12 @@ export default function Attendance() {
         style={{ height: 500 }} // required, needs explicit height
         //onSelectEvent={(event) => console.log(event)} // click handler
       />
-      I am a cute Page Or whatever
       {attendance
         ? attendance.map((attender) => (
             <div key={attender.id}>{attender.first_name}</div>
           ))
         : null}
+      <AddPractice setSessions={setSessions} sessions={sessions}/>
       <Button onClick={handleAttendance}>Click me</Button>
     </div>
   );
