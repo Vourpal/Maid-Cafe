@@ -9,13 +9,11 @@ import { authHeaders } from "@/lib/api";
 import { PracticeSessions } from "@/types/event";
 
 type PracticeProps = {
-  sessions: PracticeSessions[];
   setSessions: React.Dispatch<React.SetStateAction<PracticeSessions[]>>;
 };
 
-export default function AddPractice({ sessions, setSessions }: PracticeProps) {
+export default function AddPractice({ setSessions }: PracticeProps) {
   const [form, setForm] = useState(false);
-
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
   const [date, setDate] = useState("");
@@ -25,32 +23,30 @@ export default function AddPractice({ sessions, setSessions }: PracticeProps) {
     e.preventDefault();
 
     try {
-      const newSession: PracticeSessions = {
-        id: Date.now(), // temporary ID
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/practice-sessions`,
+        {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ title, location, date, notes }),
+        }
+      );
+
+      if (!res.ok) throw new Error("Failed to create practice session");
+
+      const data = await res.json();
+
+      const createdSession: PracticeSessions = {
+        id: data.data.id,
         title,
         location,
         date,
         notes,
       };
 
-      // Optimistically update local state
-      setSessions([...sessions, newSession]);
-
-      // Send to backend
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/practice-sessions`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify({
-          title,
-          location,
-          date,
-          notes,
-        }),
-      });
-
-      if (!res.ok) throw new Error("Failed to create practice session");
-
+      setSessions((prev) => [...prev, createdSession]);
       toast.success("Practice session created!");
+
       setForm(false);
       setTitle("");
       setLocation("");
@@ -83,7 +79,9 @@ export default function AddPractice({ sessions, setSessions }: PracticeProps) {
           <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
             <div className="bg-white p-6 rounded-xl max-w-md w-full pointer-events-auto shadow-lg overflow-y-auto max-h-[90vh]">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-rose-500 font-semibold text-lg">🎀 Add Practice Session</h2>
+                <h2 className="text-rose-500 font-semibold text-lg">
+                  🎀 Add Practice Session
+                </h2>
                 <button
                   onClick={() => setForm(false)}
                   className="text-gray-400 hover:text-gray-600"
@@ -95,26 +93,12 @@ export default function AddPractice({ sessions, setSessions }: PracticeProps) {
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 <Field>
                   <FieldLabel>Title</FieldLabel>
-                  <Input
-                    type="text"
-                    placeholder="Practice title"
-                    value={title}
-                    maxLength={100}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="border-rose-200 focus:ring-rose-300"
-                    required
-                  />
+                  <Input value={title} onChange={(e) => setTitle(e.target.value)} required />
                 </Field>
 
                 <Field>
                   <FieldLabel>Location</FieldLabel>
-                  <Input
-                    type="text"
-                    placeholder="Where is it?"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    className="border-rose-200 focus:ring-rose-300"
-                  />
+                  <Input value={location} onChange={(e) => setLocation(e.target.value)} />
                 </Field>
 
                 <Field>
@@ -123,7 +107,6 @@ export default function AddPractice({ sessions, setSessions }: PracticeProps) {
                     type="date"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="border-rose-200 focus:ring-rose-300"
                     required
                   />
                 </Field>
@@ -131,12 +114,9 @@ export default function AddPractice({ sessions, setSessions }: PracticeProps) {
                 <Field>
                   <FieldLabel>Notes</FieldLabel>
                   <textarea
-                    placeholder="Additional notes"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    maxLength={255}
-                    rows={3}
-                    className="border border-rose-200 rounded-md px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-rose-300"
+                    className="border border-rose-200 rounded-md px-3 py-2 text-sm w-full"
                   />
                 </Field>
 

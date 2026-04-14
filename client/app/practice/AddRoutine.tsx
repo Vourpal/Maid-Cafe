@@ -4,12 +4,18 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { authHeaders } from "@/lib/api";
 
-type Props = {
-  practiceId: number;
-  onDone?: () => void;
+type Routine = {
+  id: number;
+  name: string;
+  notes: string;
 };
 
-export default function AddRoutine({ practiceId, onDone }: Props) {
+type Props = {
+  practiceId: number;
+  setRoutines: React.Dispatch<React.SetStateAction<Routine[]>>;
+};
+
+export default function AddRoutine({ practiceId, setRoutines }: Props) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [notes, setNotes] = useState("");
@@ -27,11 +33,16 @@ export default function AddRoutine({ practiceId, onDone }: Props) {
 
       if (!res.ok) throw new Error("Failed to add routine");
 
+      const data = await res.json();
+
+      const newRoutine: Routine = data.data;
+
       setOpen(false);
       setName("");
       setNotes("");
 
-      onDone?.(); // ✅ notify parent to refresh / close modal if needed
+      // ✅ instantly update UI without refetch
+      setRoutines((prev) => [...prev, newRoutine]);
     } catch (err) {
       console.error(err);
     }

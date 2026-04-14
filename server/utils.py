@@ -7,16 +7,19 @@ from db import connect_db, release_db
 
 @contextmanager
 def get_db():
-    conn = connect_db()
+    conn = None
     try:
-        yield conn, conn.cursor()
+        conn = connect_db()
+        cur = conn.cursor()
+        yield conn, cur
         conn.commit()
     except Exception:
-        conn.rollback()
+        if conn:
+            conn.rollback()
         raise
     finally:
-        release_db(conn)    # ← was conn.close()
-
+        if conn:
+            release_db(conn)
 
 # ── Response helpers ──────────────────────────────────────────────────────────
 

@@ -20,14 +20,17 @@ def _connection_kwargs():
 
 
 _pool = psycopg2.pool.ThreadedConnectionPool(
-    minconn=2,
-    maxconn=10,
+    minconn=5,
+    maxconn=50,
     keepalives=1,
     keepalives_idle=30,
     keepalives_interval=10,
     keepalives_count=5,
     **_connection_kwargs(),
 )
+
+print("DB Pool initialized")
+print("Used:", _pool._used, "Max:", _pool.maxconn)
 
 
 def connect_db():

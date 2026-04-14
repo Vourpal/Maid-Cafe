@@ -4,11 +4,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { authHeaders } from "@/lib/api";
 
-type Props = {
-  practiceId: number;
-  onDone?: () => void;
-};
-
 type Attendance = {
   id: number;
   first_name: string;
@@ -18,21 +13,20 @@ type Attendance = {
   notes: string;
 };
 
-export default function EditAttendance({ practiceId, onDone }: Props) {
+type Props = {
+  practiceId: number;
+  attendance: Attendance[];
+  onDone: (updated: Attendance[]) => void;
+};
+
+export default function EditAttendance({ practiceId, attendance, onDone }: Props) {
   const [open, setOpen] = useState(false);
-  const [attendance, setAttendance] = useState<Attendance[]>([]);
+  // Local copy for editing — initialized from prop when modal opens
+  const [local, setLocal] = useState<Attendance[]>([]);
 
-  async function fetchAttendance() {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/practice-sessions/${practiceId}/attendance`,
-      {
-        method: "GET",
-        headers: authHeaders(),
-      }
-    );
-
-    const data = await res.json();
-    setAttendance(data.data);
+  function handleOpen() {
+    setLocal(attendance.map((a) => ({ ...a })));
+    setOpen(true);
   }
 
   async function handleSubmit() {
@@ -43,7 +37,7 @@ export default function EditAttendance({ practiceId, onDone }: Props) {
           method: "PATCH",
           headers: authHeaders(),
           body: JSON.stringify({
-            updates: attendance.map((a) => ({
+            updates: local.map((a) => ({
               id: a.id,
               attended: a.attended,
               late: a.late,
@@ -55,36 +49,30 @@ export default function EditAttendance({ practiceId, onDone }: Props) {
 
       if (!res.ok) throw new Error("Failed to update attendance");
 
+      // Push updated data back up — no refetch needed
+      onDone(local);
       setOpen(false);
-      onDone?.();
     } catch (err) {
       console.error(err);
     }
   }
 
-  function toggleField(id: number, field: "attended" | "late") {
-    setAttendance((prev) =>
-      prev.map((a) =>
-        a.id === id ? { ...a, [field]: !a[field] } : a
-      )
+  function toggle(id: number, field: "attended" | "late") {
+    setLocal((prev) =>
+      prev.map((a) => (a.id === id ? { ...a, [field]: !a[field] } : a))
     );
   }
 
   function updateNotes(id: number, value: string) {
-    setAttendance((prev) =>
-      prev.map((a) =>
-        a.id === id ? { ...a, notes: value } : a
-      )
+    setLocal((prev) =>
+      prev.map((a) => (a.id === id ? { ...a, notes: value } : a))
     );
   }
 
   return (
     <div>
       <Button
-        onClick={() => {
-          setOpen(true);
-          fetchAttendance();
-        }}
+        onClick={handleOpen}
         className="bg-rose-500 hover:bg-rose-600 text-white w-full"
       >
         Edit Attendance
@@ -104,50 +92,55 @@ export default function EditAttendance({ practiceId, onDone }: Props) {
                 <h2 className="text-rose-500 font-semibold text-lg">
                   🎀 Edit Attendance
                 </h2>
-
-                <button onClick={() => setOpen(false)}>✕</button>
+                <button
+                  onClick={() => setOpen(false)}
+                  className="text-gray-400 hover:text-gray-600 text-lg"
+                >
+                  ✕
+                </button>
               </div>
 
               <div className="flex flex-col gap-3">
-                {attendance.map((a) => (
-                  <div key={a.id} className="border p-3 rounded-md">
-                    <div className="font-medium">
+                {local.map((a) => (
+                  <div key={a.id} className="border border-rose-200 rounded-md p-3">
+                    <div className="font-medium mb-2">
                       {a.first_name} {a.last_name}
                     </div>
-
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 mb-2">
                       <Button
                         variant={a.attended ? "default" : "outline"}
-                        onClick={() => toggleField(a.id, "attended")}
+                        onClick={() => toggle(a.id, "attended")}
                       >
                         Attended
                       </Button>
-
                       <Button
                         variant={a.late ? "default" : "outline"}
-                        onClick={() => toggleField(a.id, "late")}
+                        onClick={() => toggle(a.id, "late")}
                       >
                         Late
                       </Button>
                     </div>
-
                     <textarea
                       value={a.notes || ""}
-                      onChange={(e) =>
-                        updateNotes(a.id, e.target.value)
-                      }
-                      className="border w-full mt-2 p-1"
+                      onChange={(e) => updateNotes(a.id, e.target.value)}
+                      className="border border-rose-200 w-full rounded-md p-2 text-sm"
                     />
                   </div>
                 ))}
               </div>
 
               <div className="flex gap-2 mt-4">
-                <Button onClick={handleSubmit} className="flex-1">
+                <Button
+                  onClick={handleSubmit}
+                  className="bg-rose-500 hover:bg-rose-600 text-white flex-1"
+                >
                   Save
                 </Button>
-
-                <Button variant="outline" onClick={() => setOpen(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setOpen(false)}
+                  className="border-rose-200 text-gray-600 flex-1"
+                >
                   Cancel
                 </Button>
               </div>
