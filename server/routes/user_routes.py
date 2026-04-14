@@ -26,7 +26,7 @@ def get_all_users(user_id):
         return success_response([u.model_dump() for u in data], 200)
 
 
-@user_bp.route("/", methods=["POST"])
+@user_bp.route("/users", methods=["POST"])
 def create_new_user():
     try:
         with get_db() as (conn, cur):

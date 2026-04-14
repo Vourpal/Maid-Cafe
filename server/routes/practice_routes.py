@@ -14,6 +14,7 @@ from queries.practice_queries import (
     remove_routine_from_practice,
     update_practice_attendance,
     update_routine,
+    update_routines_bulk,
 )
 from models import PracticeSession
 from utils import APIError, get_db, success_response
@@ -149,3 +150,18 @@ def delete_routine_from_practice(user_id, practice_id, routine_id):
             raise APIError("NOT_FOUND", "Routine not linked to practice", 404)
 
         return success_response({"deleted": routine_id}, 200)
+
+@practice_bp.route("/routines/bulk", methods=["PATCH"])
+@require_admin
+def edit_routines_bulk(user_id):
+    data = request.get_json()
+
+    routines = data.get("routines", [])
+
+    if not isinstance(routines, list):
+        raise APIError("VALIDATION_ERROR", "Routines must be a list", 422)
+
+    with get_db() as (conn, cur):
+        updated = update_routines_bulk(cur, routines)
+
+        return success_response(updated, 200)

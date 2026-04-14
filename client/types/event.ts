@@ -17,3 +17,13 @@ export type PracticeSessions = {
   date: string;
   notes: string;
 };
+
+export type Attendance = {
+  id: number;
+  user_id: number;
+  first_name: string;
+  last_name: string;
+  attended: boolean;
+  late: boolean;
+  notes: string | null;
+};

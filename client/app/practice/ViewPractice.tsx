@@ -7,20 +7,11 @@ import EditAttendance from "./EditAttendance";
 import AddRoutine from "./AddRoutine";
 import EditRoutine from "./EditRoutine";
 import { authHeaders } from "@/lib/api";
+import { Attendance } from "@/types/event";
 
 type Routine = {
   id: number;
   name: string;
-  notes: string;
-};
-
-type Attendance = {
-  id: number;
-  user_id: number;
-  first_name: string;
-  last_name: string;
-  attended: boolean;
-  late: boolean;
   notes: string;
 };
 
@@ -41,43 +32,84 @@ export default function ViewPractice({ event, onClose }: Props) {
 
   const session = event?.resource;
 
+  // =========================
+  // 🧠 DEBUG: session changes
+  // =========================
+  useEffect(() => {
+    console.log("🧠 SESSION CHANGED:", session?.id);
+  }, [session]);
+
+  // =========================
+  // 🧠 DEBUG: state changes
+  // =========================
+  useEffect(() => {
+    console.log("📦 ROUTINES STATE UPDATED:", routines);
+  }, [routines]);
+
+  useEffect(() => {
+    console.log("📦 ATTENDANCE STATE UPDATED:", attendance);
+  }, [attendance]);
+
   useEffect(() => {
     if (!session) return;
 
-    // Clear stale data immediately so old session never flashes
+    console.log("🚀 FETCH START session:", session.id);
+
     setRoutines([]);
     setAttendance([]);
     setLoading(true);
 
     const fetchData = async () => {
       try {
-        const [routinesRes, attendanceRes] = await Promise.all([
-          fetch(
+        // =========================
+        // ROUTINES
+        // =========================
+        try {
+          console.log("📡 Fetching routines...");
+
+          const routinesRes = await fetch(
             `${process.env.NEXT_PUBLIC_API_URL}/practice-sessions/${session.id}/routines`,
             { headers: authHeaders() }
-          ),
-          fetch(
+          );
+
+          const routinesData = await routinesRes.json();
+
+          console.log("📦 ROUTINES RESPONSE:", routinesData);
+
+          setRoutines(routinesData?.data ?? []);
+        } catch (err) {
+          console.error("❌ Routines fetch failed:", err);
+          setRoutines([]);
+        }
+
+        // =========================
+        // ATTENDANCE
+        // =========================
+        try {
+          console.log("📡 Fetching attendance...");
+
+          const attendanceRes = await fetch(
             `${process.env.NEXT_PUBLIC_API_URL}/practice-sessions/${session.id}/attendance`,
             { headers: authHeaders() }
-          ),
-        ]);
+          );
 
-        const [routinesData, attendanceData] = await Promise.all([
-          routinesRes.json(),
-          attendanceRes.json(),
-        ]);
+          const attendanceData = await attendanceRes.json();
 
-        setRoutines(routinesData.data);
-        setAttendance(attendanceData.data);
-      } catch (err) {
-        console.error("Failed to load practice data:", err);
+          console.log("📦 ATTENDANCE RESPONSE:", attendanceData);
+
+          setAttendance(attendanceData?.data ?? []);
+        } catch (err) {
+          console.error("❌ Attendance fetch failed:", err);
+          setAttendance([]);
+        }
       } finally {
         setLoading(false);
+        console.log("✅ FETCH DONE");
       }
     };
 
     fetchData();
-  }, [session?.id]);
+  }, [session]);
 
   if (!event) return null;
 
@@ -100,10 +132,7 @@ export default function ViewPractice({ event, onClose }: Props) {
             <h2 className="text-rose-500 font-semibold text-lg">
               🎀 {s.title}
             </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
-            >
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
               ✕
             </button>
           </div>
@@ -120,7 +149,6 @@ export default function ViewPractice({ event, onClose }: Props) {
               <div className="w-8 h-8 border-4 border-rose-200 border-t-rose-500 rounded-full animate-spin" />
             </div>
           ) : (
-            /* GRID */
             <div className="grid grid-cols-2 gap-4">
 
               {/* 👥 ATTENDANCE */}
@@ -129,23 +157,38 @@ export default function ViewPractice({ event, onClose }: Props) {
 
                 <AddAttendance
                   practiceId={s.id}
-                  onDone={(newAttendees) => setAttendance((prev) => [...prev, ...newAttendees])}
+                  onDone={(newAttendees) => {
+                    console.log("🔥 ADD ATTENDANCE CALLBACK:", newAttendees);
+
+                    setAttendance((prev) => {
+                      const merged = [
+                        ...prev,
+                        ...(Array.isArray(newAttendees) ? newAttendees : []),
+                      ];
+
+                      console.log("🔥 MERGED ATTENDANCE:", merged);
+                      return merged;
+                    });
+                  }}
                 />
+
                 <EditAttendance
                   practiceId={s.id}
                   attendance={attendance}
-                  onDone={(updated) => setAttendance(updated)}
+                  onDone={(updated) => {
+                    console.log("🔥 EDIT ATTENDANCE CALLBACK:", updated);
+                    setAttendance(updated);
+                  }}
                 />
 
                 <div className="flex flex-col gap-2 mt-2">
                   {attendance.length === 0 ? (
-                    <p className="text-sm text-gray-400">No attendance recorded</p>
+                    <p className="text-sm text-gray-400">
+                      No attendance recorded
+                    </p>
                   ) : (
                     attendance.map((a) => (
-                      <div
-                        key={a.id}
-                        className="border border-rose-100 rounded-md p-2"
-                      >
+                      <div key={a.id} className="border border-rose-100 rounded-md p-2">
                         <div className="flex justify-between text-sm">
                           <div className="font-medium">
                             {a.first_name} {a.last_name}
@@ -157,8 +200,11 @@ export default function ViewPractice({ event, onClose }: Props) {
                             {a.late && <span className="text-yellow-500">Late</span>}
                           </div>
                         </div>
+
                         {a.notes && (
-                          <div className="text-xs text-gray-500 mt-1">{a.notes}</div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {a.notes}
+                          </div>
                         )}
                       </div>
                     ))
@@ -172,26 +218,34 @@ export default function ViewPractice({ event, onClose }: Props) {
 
                 <AddRoutine
                   practiceId={s.id}
-                  setRoutines={setRoutines}
+                  setRoutines={(updateFn) => {
+                    console.log("🔥 ADD ROUTINE UPDATE");
+                    setRoutines(updateFn);
+                  }}
                 />
+
                 <EditRoutine
                   practiceId={s.id}
                   routines={routines}
-                  onDone={(updated) => setRoutines(updated)}
+                  onDone={(updated) => {
+                    console.log("🔥 EDIT ROUTINE CALLBACK:", updated);
+                    setRoutines(updated);
+                  }}
                 />
 
                 <div className="flex flex-col gap-2 mt-2">
                   {routines.length === 0 ? (
-                    <p className="text-sm text-gray-400">No routines for this practice</p>
+                    <p className="text-sm text-gray-400">
+                      No routines for this practice
+                    </p>
                   ) : (
                     routines.map((r) => (
-                      <div
-                        key={r.id}
-                        className="border border-rose-100 rounded-md p-2"
-                      >
+                      <div key={r.id} className="border border-rose-100 rounded-md p-2">
                         <div className="font-medium text-sm">{r.name}</div>
                         {r.notes && (
-                          <div className="text-xs text-gray-500 mt-1">{r.notes}</div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {r.notes}
+                          </div>
                         )}
                       </div>
                     ))

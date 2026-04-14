@@ -16,9 +16,14 @@ type Props = {
   onDone: (updated: Routine[]) => void;
 };
 
-export default function EditRoutine({ practiceId, routines, onDone }: Props) {
+export default function EditRoutine({
+  practiceId,
+  routines,
+  onDone,
+}: Props) {
   const [open, setOpen] = useState(false);
-  // Local copy for editing — initialized from prop when modal opens
+  const [loading, setLoading] = useState(false);
+
   const [localRoutines, setLocalRoutines] = useState<Routine[]>([]);
 
   function handleOpen() {
@@ -26,27 +31,39 @@ export default function EditRoutine({ practiceId, routines, onDone }: Props) {
     setOpen(true);
   }
 
-  async function handleSave() {
-    try {
-      for (const r of localRoutines) {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/routines/${r.id}`,
-          {
-            method: "PATCH",
-            headers: authHeaders(),
-            body: JSON.stringify({ name: r.name, notes: r.notes }),
-          }
-        );
-        if (!res.ok) throw new Error(`Failed to update routine ${r.id}`);
-      }
+async function handleSave() {
+  setLoading(true);
 
-      // Push updated data back up — no refetch needed
-      onDone(localRoutines);
-      setOpen(false);
-    } catch (err) {
-      console.error("Failed to save routines:", err);
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/routines/bulk`,
+      {
+        method: "PATCH",
+        headers: {
+          ...authHeaders(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          routines: localRoutines,
+        }),
+      }
+    );
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(err);
     }
+
+    const data = await res.json();
+
+    onDone(data?.data);
+    setOpen(false);
+  } catch (err) {
+    console.error("Failed to save routines:", err);
+  } finally {
+    setLoading(false);
   }
+}
 
   return (
     <div>
@@ -73,6 +90,7 @@ export default function EditRoutine({ practiceId, routines, onDone }: Props) {
                 <h2 className="text-rose-500 font-semibold text-lg">
                   🎀 Edit Routines
                 </h2>
+
                 <button
                   onClick={() => setOpen(false)}
                   className="text-gray-400 hover:text-gray-600 text-lg"
@@ -81,26 +99,35 @@ export default function EditRoutine({ practiceId, routines, onDone }: Props) {
                 </button>
               </div>
 
+              {/* EDIT FIELDS */}
               <div className="flex flex-col gap-3">
                 {localRoutines.map((r) => (
-                  <div key={r.id} className="border border-rose-200 rounded-md p-3">
+                  <div
+                    key={r.id}
+                    className="border border-rose-200 rounded-md p-3"
+                  >
                     <input
                       value={r.name}
                       onChange={(e) =>
                         setLocalRoutines((prev) =>
                           prev.map((x) =>
-                            x.id === r.id ? { ...x, name: e.target.value } : x
+                            x.id === r.id
+                              ? { ...x, name: e.target.value }
+                              : x
                           )
                         )
                       }
                       className="border border-rose-200 w-full p-2 rounded mb-2"
                     />
+
                     <textarea
                       value={r.notes || ""}
                       onChange={(e) =>
                         setLocalRoutines((prev) =>
                           prev.map((x) =>
-                            x.id === r.id ? { ...x, notes: e.target.value } : x
+                            x.id === r.id
+                              ? { ...x, notes: e.target.value }
+                              : x
                           )
                         )
                       }
@@ -110,16 +137,20 @@ export default function EditRoutine({ practiceId, routines, onDone }: Props) {
                 ))}
               </div>
 
+              {/* ACTIONS */}
               <div className="flex gap-2 mt-4">
                 <Button
                   onClick={handleSave}
+                  disabled={loading}
                   className="bg-rose-500 hover:bg-rose-600 text-white flex-1"
                 >
-                  Save
+                  {loading ? "Saving..." : "Save"}
                 </Button>
+
                 <Button
                   variant="outline"
                   onClick={() => setOpen(false)}
+                  disabled={loading}
                   className="border-rose-200 text-gray-600 flex-1"
                 >
                   Cancel

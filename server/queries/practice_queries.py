@@ -170,3 +170,32 @@ def remove_routine_from_practice(db, practice_id: int, routine_id: int):
 
     row = db.fetchone()
     return row[0] if row else None
+
+def update_routines_bulk(db, routines: list[dict]):
+    updated = []
+
+    for r in routines:
+        db.execute(
+            """
+            UPDATE routines
+            SET name = %s,
+                notes = %s
+            WHERE id = %s
+            RETURNING id, name, notes;
+            """,
+            (
+                r["name"],
+                r.get("notes"),
+                r["id"],
+            ),
+        )
+
+        row = db.fetchone()
+        if row:
+            updated.append({
+                "id": row[0],
+                "name": row[1],
+                "notes": row[2],
+            })
+
+    return updated

@@ -3,15 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { authHeaders } from "@/lib/api";
-
-type Attendance = {
-  id: number;
-  first_name: string;
-  last_name: string;
-  attended: boolean;
-  late: boolean;
-  notes: string;
-};
+import { Attendance } from "@/types/event";
 
 type Props = {
   practiceId: number;
@@ -19,9 +11,14 @@ type Props = {
   onDone: (updated: Attendance[]) => void;
 };
 
-export default function EditAttendance({ practiceId, attendance, onDone }: Props) {
+export default function EditAttendance({
+  practiceId,
+  attendance,
+  onDone,
+}: Props) {
   const [open, setOpen] = useState(false);
-  // Local copy for editing — initialized from prop when modal opens
+  const [loading, setLoading] = useState(false);
+
   const [local, setLocal] = useState<Attendance[]>([]);
 
   function handleOpen() {
@@ -29,7 +26,25 @@ export default function EditAttendance({ practiceId, attendance, onDone }: Props
     setOpen(true);
   }
 
+  function toggle(id: number, field: "attended" | "late") {
+    setLocal((prev) =>
+      prev.map((a) =>
+        a.id === id ? { ...a, [field]: !a[field] } : a
+      )
+    );
+  }
+
+  function updateNotes(id: number, value: string) {
+    setLocal((prev) =>
+      prev.map((a) =>
+        a.id === id ? { ...a, notes: value } : a
+      )
+    );
+  }
+
   async function handleSubmit() {
+    setLoading(true);
+
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/practice-sessions/${practiceId}/attendance`,
@@ -47,26 +62,26 @@ export default function EditAttendance({ practiceId, attendance, onDone }: Props
         }
       );
 
-      if (!res.ok) throw new Error("Failed to update attendance");
+      if (!res.ok) {
+        throw new Error("Failed to update attendance");
+      }
 
-      // Push updated data back up — no refetch needed
-      onDone(local);
+      const json = await res.json();
+
+      // =========================
+      // SERVER SOURCE OF TRUTH
+      // =========================
+      const updated: Attendance[] = Array.isArray(json.data)
+        ? json.data
+        : local; // fallback if backend doesn't return data
+
+      onDone(updated);
       setOpen(false);
     } catch (err) {
       console.error(err);
+    } finally {
+      setLoading(false);
     }
-  }
-
-  function toggle(id: number, field: "attended" | "late") {
-    setLocal((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, [field]: !a[field] } : a))
-    );
-  }
-
-  function updateNotes(id: number, value: string) {
-    setLocal((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, notes: value } : a))
-    );
   }
 
   return (
@@ -92,6 +107,7 @@ export default function EditAttendance({ practiceId, attendance, onDone }: Props
                 <h2 className="text-rose-500 font-semibold text-lg">
                   🎀 Edit Attendance
                 </h2>
+
                 <button
                   onClick={() => setOpen(false)}
                   className="text-gray-400 hover:text-gray-600 text-lg"
@@ -102,10 +118,14 @@ export default function EditAttendance({ practiceId, attendance, onDone }: Props
 
               <div className="flex flex-col gap-3">
                 {local.map((a) => (
-                  <div key={a.id} className="border border-rose-200 rounded-md p-3">
+                  <div
+                    key={a.id}
+                    className="border border-rose-200 rounded-md p-3"
+                  >
                     <div className="font-medium mb-2">
                       {a.first_name} {a.last_name}
                     </div>
+
                     <div className="flex gap-2 mb-2">
                       <Button
                         variant={a.attended ? "default" : "outline"}
@@ -113,6 +133,7 @@ export default function EditAttendance({ practiceId, attendance, onDone }: Props
                       >
                         Attended
                       </Button>
+
                       <Button
                         variant={a.late ? "default" : "outline"}
                         onClick={() => toggle(a.id, "late")}
@@ -120,9 +141,12 @@ export default function EditAttendance({ practiceId, attendance, onDone }: Props
                         Late
                       </Button>
                     </div>
+
                     <textarea
                       value={a.notes || ""}
-                      onChange={(e) => updateNotes(a.id, e.target.value)}
+                      onChange={(e) =>
+                        updateNotes(a.id, e.target.value)
+                      }
                       className="border border-rose-200 w-full rounded-md p-2 text-sm"
                     />
                   </div>
@@ -132,13 +156,16 @@ export default function EditAttendance({ practiceId, attendance, onDone }: Props
               <div className="flex gap-2 mt-4">
                 <Button
                   onClick={handleSubmit}
+                  disabled={loading}
                   className="bg-rose-500 hover:bg-rose-600 text-white flex-1"
                 >
-                  Save
+                  {loading ? "Saving..." : "Save"}
                 </Button>
+
                 <Button
                   variant="outline"
                   onClick={() => setOpen(false)}
+                  disabled={loading}
                   className="border-rose-200 text-gray-600 flex-1"
                 >
                   Cancel

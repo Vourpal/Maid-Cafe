@@ -4,16 +4,7 @@ import { Button } from "@/components/ui/button";
 import { authHeaders, authHeadersNoContent } from "@/lib/api";
 import { useState } from "react";
 import { useUserAuthentication } from "../UserAuthentication";
-
-type Attendance = {
-  id: number;
-  user_id: number;
-  first_name: string;
-  last_name: string;
-  attended: boolean;
-  late: boolean;
-  notes: string;
-};
+import { Attendance } from "@/types/event";
 
 type User = {
   id: number;
@@ -23,6 +14,10 @@ type User = {
   username: string;
 };
 
+type ApiResponse<T> = {
+  data: T;
+};
+
 type Props = {
   practiceId: number;
   onDone: (newAttendees: Attendance[]) => void;
@@ -30,60 +25,103 @@ type Props = {
 
 export default function AddAttendance({ practiceId, onDone }: Props) {
   const { user } = useUserAuthentication();
+
   const [open, setOpen] = useState(false);
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
-  // Tracks which users are selected (checked) — starts with all selected
   const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [loading, setLoading] = useState(false);
 
   async function handleOpen() {
     try {
-      const [usersRes, attendanceRes] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/users`, {
-          method: "GET",
-          headers: authHeadersNoContent(),
-        }),
-        fetch(
+      setAvailableUsers([]);
+      setSelected(new Set());
+
+      let users: User[] = [];
+      let attendance: Attendance[] = [];
+
+      // ======================
+      // USERS
+      // ======================
+      try {
+        const usersRes = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/users`,
+          {
+            method: "GET",
+            headers: authHeadersNoContent(),
+          }
+        );
+
+        if (!usersRes.ok) throw new Error("Failed users fetch");
+
+        const usersJson: ApiResponse<User[]> = await usersRes.json();
+
+        users = Array.isArray(usersJson.data) ? usersJson.data : [];
+      } catch (err) {
+        console.error("Users fetch failed:", err);
+      }
+
+      // ======================
+      // ATTENDANCE
+      // ======================
+      try {
+        const attendanceRes = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/practice-sessions/${practiceId}/attendance`,
-          { method: "GET", headers: authHeaders() }
-        ),
-      ]);
+          {
+            method: "GET",
+            headers: authHeaders(),
+          }
+        );
 
-      const [usersData, attendanceData] = await Promise.all([
-        usersRes.json(),
-        attendanceRes.json(),
-      ]);
+        if (!attendanceRes.ok)
+          throw new Error("Failed attendance fetch");
 
+        const attendanceJson: ApiResponse<Attendance[]> =
+          await attendanceRes.json();
+
+        attendance = Array.isArray(attendanceJson.data)
+          ? attendanceJson.data
+          : [];
+      } catch (err) {
+        console.error("Attendance fetch failed:", err);
+      }
+
+      // ======================
+      // FILTER LOGIC
+      // ======================
       const alreadyAttending = new Set(
-        attendanceData.data.map((a: Attendance) => a.user_id)
+        attendance.map((a) => a.user_id)
       );
 
-      const filtered: User[] = usersData.data.filter(
-        (u: User) => !alreadyAttending.has(u.id)
+      const filtered = users.filter(
+        (u) => !alreadyAttending.has(u.id)
       );
 
       setAvailableUsers(filtered);
-      // Default: all available users selected
       setSelected(new Set(filtered.map((u) => u.id)));
       setOpen(true);
     } catch (err) {
-      console.error("Failed to load attendance modal:", err);
+      console.error("Failed to load modal:", err);
     }
   }
 
   function toggleUser(id: number) {
     setSelected((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }
 
   async function handleSubmit() {
     const attendeeIds = [...selected];
+
     if (attendeeIds.length === 0) {
       setOpen(false);
       return;
     }
+
+    setLoading(true);
 
     try {
       const res = await fetch(
@@ -97,13 +135,21 @@ export default function AddAttendance({ practiceId, onDone }: Props) {
 
       if (!res.ok) throw new Error("Failed to submit attendance");
 
-      const data = await res.json();
+      const json: ApiResponse<Attendance[]> = await res.json();
 
-      // Pass the newly created attendance records back up
-      onDone(data.data);
+      const newAttendees: Attendance[] = Array.isArray(json.data)
+        ? json.data
+        : [];
+
+      // ======================
+      // OPTIMISTIC SAFE MERGE
+      // ======================
+      onDone(newAttendees);
       setOpen(false);
     } catch (err) {
       console.error(err);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -120,13 +166,11 @@ export default function AddAttendance({ practiceId, onDone }: Props) {
 
       {open && (
         <>
-          {/* Backdrop */}
           <div
             className="fixed inset-0 bg-black bg-opacity-50 z-40"
             onClick={() => setOpen(false)}
           />
 
-          {/* Modal */}
           <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
             <div className="bg-white p-6 rounded-xl max-w-md w-full pointer-events-auto shadow-lg max-h-[90vh] overflow-y-auto">
 
@@ -134,6 +178,7 @@ export default function AddAttendance({ practiceId, onDone }: Props) {
                 <h2 className="text-rose-500 font-semibold text-lg">
                   🎀 Add Attendance
                 </h2>
+
                 <button
                   onClick={() => setOpen(false)}
                   className="text-gray-400 hover:text-gray-600 text-lg"
@@ -144,7 +189,9 @@ export default function AddAttendance({ practiceId, onDone }: Props) {
 
               <div className="flex flex-col gap-2">
                 {availableUsers.length === 0 ? (
-                  <p className="text-sm text-gray-400">No available users to add</p>
+                  <p className="text-sm text-gray-400">
+                    No available users to add
+                  </p>
                 ) : (
                   availableUsers.map((u) => (
                     <label
@@ -154,6 +201,7 @@ export default function AddAttendance({ practiceId, onDone }: Props) {
                       <span>
                         {u.first_name} {u.last_name}
                       </span>
+
                       <input
                         type="checkbox"
                         checked={selected.has(u.id)}
@@ -168,13 +216,16 @@ export default function AddAttendance({ practiceId, onDone }: Props) {
               <div className="flex gap-2 mt-4">
                 <Button
                   onClick={handleSubmit}
+                  disabled={loading}
                   className="bg-rose-500 hover:bg-rose-600 text-white flex-1"
                 >
-                  Submit
+                  {loading ? "Submitting..." : "Submit"}
                 </Button>
+
                 <Button
                   variant="outline"
                   onClick={() => setOpen(false)}
+                  disabled={loading}
                   className="border-rose-200 text-gray-600 flex-1"
                 >
                   Cancel

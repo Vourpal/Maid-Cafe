@@ -19,14 +19,22 @@ export default function AddRoutine({ practiceId, setRoutines }: Props) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [notes, setNotes] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit() {
+    if (!name.trim()) return;
+
+    setLoading(true);
+
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/practice-sessions/${practiceId}/routines`,
         {
           method: "POST",
-          headers: authHeaders(),
+          headers: {
+            ...authHeaders(),
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({ name, notes }),
         }
       );
@@ -35,16 +43,35 @@ export default function AddRoutine({ practiceId, setRoutines }: Props) {
 
       const data = await res.json();
 
-      const newRoutine: Routine = data.data;
+      const id = data?.data?.id;
+
+      if (!id) {
+        throw new Error("Invalid routine response (missing id)");
+      }
+
+      // ✅ ALWAYS normalize shape (backend is unreliable here)
+      const newRoutine: Routine = {
+        id,
+        name: data?.data?.name ?? name,
+        notes: data?.data?.notes ?? notes,
+      };
+
+      setRoutines((prev) => {
+        const exists = prev.some((r) => r.id === newRoutine.id);
+        if (exists) return prev;
+        return [...prev, newRoutine];
+      });
+
+      console.log("🔥 ADD ROUTINE SUCCESS");
+      console.log("RAW RESPONSE:", data);
 
       setOpen(false);
       setName("");
       setNotes("");
-
-      // ✅ instantly update UI without refetch
-      setRoutines((prev) => [...prev, newRoutine]);
     } catch (err) {
       console.error(err);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -59,13 +86,11 @@ export default function AddRoutine({ practiceId, setRoutines }: Props) {
 
       {open && (
         <>
-          {/* Backdrop */}
           <div
             className="fixed inset-0 bg-black bg-opacity-50 z-40"
             onClick={() => setOpen(false)}
           />
 
-          {/* Modal */}
           <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
             <div className="bg-white p-6 rounded-xl max-w-md w-full pointer-events-auto shadow-lg">
               <h2 className="text-rose-500 font-semibold mb-4">
@@ -87,10 +112,19 @@ export default function AddRoutine({ practiceId, setRoutines }: Props) {
               />
 
               <div className="flex gap-2 mt-4">
-                <Button onClick={handleSubmit} className="flex-1">
-                  Add
+                <Button
+                  onClick={handleSubmit}
+                  className="flex-1"
+                  disabled={loading}
+                >
+                  {loading ? "Adding..." : "Add"}
                 </Button>
-                <Button variant="outline" onClick={() => setOpen(false)}>
+
+                <Button
+                  variant="outline"
+                  onClick={() => setOpen(false)}
+                  disabled={loading}
+                >
                   Cancel
                 </Button>
               </div>
