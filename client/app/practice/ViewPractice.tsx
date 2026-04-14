@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { PracticeSessions } from "@/types/event";
 import AddAttendance from "./AddAttendance";
+import EditAttendance from "./EditAttendance";
 
 type Props = {
   event: {
@@ -52,13 +53,8 @@ export default function ViewPractice({ event, onClose }: Props) {
           </div>
 
           <div className="mt-4">
-            <Button
-              onClick={onClose}
-              className="bg-rose-500 hover:bg-rose-600 text-white w-full"
-            >
-              Close
-            </Button>
-            <AddAttendance practiceId={event.resource.id}/>
+            <AddAttendance practiceId={event.resource.id} />
+            <EditAttendance practiceId={event.resource.id}/>
           </div>
         </div>
       </div>

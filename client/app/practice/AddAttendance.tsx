@@ -1,12 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { authHeadersNoContent } from "@/lib/api";
+import { authHeaders, authHeadersNoContent } from "@/lib/api";
 import { useState } from "react";
-import {
-  UserAuthenticationProvider,
-  useUserAuthentication,
-} from "../UserAuthentication";
+import { useUserAuthentication } from "../UserAuthentication";
 
 type Attendance = {
   id: number;
@@ -44,20 +41,29 @@ export default function AddAttendance({ practiceId }: Props) {
   }
 
   async function handleSubmit() {
-    console.log("Submitting attendance:", attendance);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/practice-sessions/${practiceId}/attendance`,
+        {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            attendees: attendance.map((a) => a.id),
+          }),
+        },
+      );
 
-    // 👇 you'll implement this later
-    /*
-    await fetch(`/attendance`, {
-      method: "POST",
-      body: JSON.stringify({
-        practice_id: practiceId,
-        attendees: attendance.map(a => a.id),
-      })
-    })
-    */
+      if (!res.ok) {
+        throw new Error("Failed to submit attendance");
+      }
 
-    setOpen(false);
+      const data = await res.json();
+      console.log("Attendance submitted:", data);
+
+      setOpen(false);
+    } catch (err) {
+      console.error("Error submitting attendance:", err);
+    }
   }
   if (!user || !user.admin) return;
 
@@ -65,7 +71,7 @@ export default function AddAttendance({ practiceId }: Props) {
     <div>
       <Button
         onClick={handleOpen}
-        className="bg-rose-500 hover:bg-rose-600 text-white"
+        className="bg-rose-500 hover:bg-rose-600 text-white w-full"
       >
         Add Attendance
       </Button>

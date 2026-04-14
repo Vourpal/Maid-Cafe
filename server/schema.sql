@@ -76,8 +76,11 @@ CREATE TABLE IF NOT EXISTS practices (
     attended BOOLEAN NOT NULL DEFAULT TRUE,
     late BOOLEAN NOT NULL DEFAULT FALSE,
     notes VARCHAR,
+
     FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (practice_session_id) REFERENCES practice_sessions(id)
+    FOREIGN KEY (practice_session_id) REFERENCES practice_sessions(id) ON DELETE CASCADE,
+
+    CONSTRAINT unique_user_practice UNIQUE (user_id, practice_session_id)
 );
 
 CREATE TABLE IF NOT EXISTS routines (
