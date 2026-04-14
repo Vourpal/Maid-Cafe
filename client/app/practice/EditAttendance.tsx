@@ -1,16 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { authHeaders } from "@/lib/api";
 
 type Props = {
   practiceId: number;
+  onDone?: () => void;
 };
 
 type Attendance = {
   id: number;
-  user_id: number;
   first_name: string;
   last_name: string;
   attended: boolean;
@@ -18,7 +18,7 @@ type Attendance = {
   notes: string;
 };
 
-export default function EditAttendance({ practiceId }: Props) {
+export default function EditAttendance({ practiceId, onDone }: Props) {
   const [open, setOpen] = useState(false);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
 
@@ -56,6 +56,7 @@ export default function EditAttendance({ practiceId }: Props) {
       if (!res.ok) throw new Error("Failed to update attendance");
 
       setOpen(false);
+      onDone?.();
     } catch (err) {
       console.error(err);
     }
@@ -91,33 +92,25 @@ export default function EditAttendance({ practiceId }: Props) {
 
       {open && (
         <>
-          {/* Backdrop */}
           <div
             className="fixed inset-0 bg-black bg-opacity-50 z-40"
             onClick={() => setOpen(false)}
           />
 
-          {/* Modal */}
           <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
             <div className="bg-white p-6 rounded-xl max-w-md w-full pointer-events-auto shadow-lg max-h-[90vh] overflow-y-auto">
+
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-rose-500 font-semibold text-lg">
                   🎀 Edit Attendance
                 </h2>
-                <button
-                  onClick={() => setOpen(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
+
+                <button onClick={() => setOpen(false)}>✕</button>
               </div>
 
               <div className="flex flex-col gap-3">
                 {attendance.map((a) => (
-                  <div
-                    key={a.id}
-                    className="border border-rose-200 rounded-md p-3 flex flex-col gap-2"
-                  >
+                  <div key={a.id} className="border p-3 rounded-md">
                     <div className="font-medium">
                       {a.first_name} {a.last_name}
                     </div>
@@ -143,29 +136,22 @@ export default function EditAttendance({ practiceId }: Props) {
                       onChange={(e) =>
                         updateNotes(a.id, e.target.value)
                       }
-                      placeholder="Notes..."
-                      className="border border-rose-200 rounded-md px-2 py-1 text-sm"
+                      className="border w-full mt-2 p-1"
                     />
                   </div>
                 ))}
               </div>
 
               <div className="flex gap-2 mt-4">
-                <Button
-                  onClick={handleSubmit}
-                  className="bg-rose-500 hover:bg-rose-600 text-white flex-1"
-                >
-                  Save Changes
+                <Button onClick={handleSubmit} className="flex-1">
+                  Save
                 </Button>
 
-                <Button
-                  variant="outline"
-                  className="border-rose-200 text-gray-600 flex-1"
-                  onClick={() => setOpen(false)}
-                >
+                <Button variant="outline" onClick={() => setOpen(false)}>
                   Cancel
                 </Button>
               </div>
+
             </div>
           </div>
         </>

@@ -4,11 +4,16 @@ from pydantic import ValidationError
 from middleware import require_admin, require_auth
 from queries.practice_queries import (
     add_practice_attendance,
+    add_routine_to_practice,
+    create_routine,
     delete_practice_sessions,
     get_all_practice_sessions,
     get_practice_attendance,
+    get_routines_by_practice,
     post_practice_sessions,
+    remove_routine_from_practice,
     update_practice_attendance,
+    update_routine,
 )
 from models import PracticeSession
 from utils import APIError, get_db, success_response
@@ -90,3 +95,57 @@ def edit_attendance(user_id, practice_id):
     with get_db() as (conn, cur):
         update_practice_attendance(cur, updates)
         return success_response({"updated": len(updates)}, 200)
+
+@practice_bp.route("/practice-sessions/<int:practice_id>/routines", methods=["POST"])
+@require_admin
+def add_routine(user_id, practice_id):
+    data = request.get_json()
+
+    name = data.get("name")
+    notes = data.get("notes")
+
+    if not name:
+        raise APIError("VALIDATION_ERROR", "Name is required", 422)
+
+    with get_db() as (conn, cur):
+        routine_id = create_routine(cur, name, notes)
+        add_routine_to_practice(cur, practice_id, routine_id)
+
+        return success_response({"id": routine_id}, 201)
+
+@practice_bp.route("/practice-sessions/<int:practice_id>/routines", methods=["GET"])
+@require_auth
+def get_routines(user_id, practice_id):
+    with get_db() as (conn, cur):
+        data = get_routines_by_practice(cur, practice_id)
+        return success_response(data, 200)
+
+@practice_bp.route("/routines/<int:routine_id>", methods=["PATCH"])
+@require_admin
+def edit_routine(user_id, routine_id):
+    data = request.get_json()
+
+    name = data.get("name")
+    notes = data.get("notes")
+
+    with get_db() as (conn, cur):
+        updated = update_routine(cur, routine_id, name, notes)
+
+        if not updated:
+            raise APIError("NOT_FOUND", "Routine not found", 404)
+
+        return success_response({"id": updated}, 200)
+
+@practice_bp.route(
+    "/practice-sessions/<int:practice_id>/routines/<int:routine_id>",
+    methods=["DELETE"],
+)
+@require_admin
+def delete_routine_from_practice(user_id, practice_id, routine_id):
+    with get_db() as (conn, cur):
+        deleted = remove_routine_from_practice(cur, practice_id, routine_id)
+
+        if not deleted:
+            raise APIError("NOT_FOUND", "Routine not linked to practice", 404)
+
+        return success_response({"deleted": routine_id}, 200)

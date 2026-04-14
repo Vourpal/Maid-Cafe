@@ -1,9 +1,28 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
 import { PracticeSessions } from "@/types/event";
 import AddAttendance from "./AddAttendance";
 import EditAttendance from "./EditAttendance";
+import AddRoutine from "./AddRoutine";
+import EditRoutine from "./EditRoutine";
+import { authHeaders } from "@/lib/api";
+
+type Routine = {
+  id: number;
+  name: string;
+  notes: string;
+};
+
+type Attendance = {
+  id: number;
+  user_id: number;
+  first_name: string;
+  last_name: string;
+  attended: boolean;
+  late: boolean;
+  notes: string;
+};
 
 type Props = {
   event: {
@@ -16,10 +35,49 @@ type Props = {
 };
 
 export default function ViewPractice({ event, onClose }: Props) {
+  // =========================
+  // ✅ HOOKS (MUST BE FIRST)
+  // =========================
+  const [routines, setRoutines] = useState<Routine[]>([]);
+  const [attendance, setAttendance] = useState<Attendance[]>([]);
+
+  const session = event?.resource;
+
+  useEffect(() => {
+    const refreshData = async () => {
+      if (!session) return;
+
+      const [routinesRes, attendanceRes] = await Promise.all([
+        fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/practice-sessions/${session.id}/routines`,
+          { headers: authHeaders() },
+        ),
+        fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/practice-sessions/${session.id}/attendance`,
+          { headers: authHeaders() },
+        ),
+      ]);
+
+      const routinesData = await routinesRes.json();
+      const attendanceData = await attendanceRes.json();
+
+      setRoutines(routinesData.data);
+      setAttendance(attendanceData.data);
+    };
+
+    refreshData();
+  }, [session]);
+
+  // =========================
+  // ✅ EARLY RETURN (AFTER HOOKS)
+  // =========================
   if (!event) return null;
 
-  const session = event.resource;
+  const s = event.resource;
 
+  // =========================
+  // 🎨 UI
+  // =========================
   return (
     <>
       {/* Backdrop */}
@@ -30,11 +88,13 @@ export default function ViewPractice({ event, onClose }: Props) {
 
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-        <div className="bg-white p-6 rounded-xl max-w-md w-full pointer-events-auto shadow-lg">
+        <div className="bg-white p-6 rounded-xl max-w-5xl w-full pointer-events-auto shadow-lg max-h-[90vh] overflow-y-auto">
+          {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-rose-500 font-semibold text-lg">
-              🎀 {session.title}
+              🎀 {s.title}
             </h2>
+
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600"
@@ -43,18 +103,104 @@ export default function ViewPractice({ event, onClose }: Props) {
             </button>
           </div>
 
-          <div className="flex flex-col gap-3 text-sm">
-            <p><strong>📍 Location:</strong> {session.location || "N/A"}</p>
+          {/* Session Info */}
+          <div className="flex flex-col gap-2 text-sm mb-4">
             <p>
-              <strong>📅 Date:</strong>{" "}
-              {new Date(session.date).toLocaleString()}
+              <strong>📍 Location:</strong> {s.location || "N/A"}
             </p>
-            <p><strong>📝 Notes:</strong> {session.notes || "None"}</p>
+            <p>
+              <strong>📅 Date:</strong> {new Date(s.date).toLocaleString()}
+            </p>
+            <p>
+              <strong>📝 Notes:</strong> {s.notes || "None"}
+            </p>
           </div>
 
-          <div className="mt-4">
-            <AddAttendance practiceId={event.resource.id} />
-            <EditAttendance practiceId={event.resource.id}/>
+          {/* GRID */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* ===================== */}
+            {/* 👥 ATTENDANCE */}
+            {/* ===================== */}
+            <div className="border border-rose-200 rounded-xl p-3 flex flex-col gap-3">
+              <h3 className="text-rose-500 font-semibold">👥 Attendance</h3>
+
+              <AddAttendance practiceId={s.id} onDone={onClose} />
+              <EditAttendance practiceId={s.id} onDone={onClose} />
+
+              <div className="flex flex-col gap-2 mt-2">
+                {attendance.length === 0 ? (
+                  <p className="text-sm text-gray-400">
+                    No attendance recorded
+                  </p>
+                ) : (
+                  attendance.map((a) => (
+                    <div
+                      key={a.id}
+                      className="border border-rose-100 rounded-md p-2"
+                    >
+                      <div className="flex justify-between text-sm">
+                        <div className="font-medium">
+                          {a.first_name} {a.last_name}
+                        </div>
+
+                        <div className="text-xs flex gap-2">
+                          <span
+                            className={
+                              a.attended ? "text-green-500" : "text-red-400"
+                            }
+                          >
+                            {a.attended ? "Present" : "Absent"}
+                          </span>
+
+                          {a.late && (
+                            <span className="text-yellow-500">Late</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {a.notes && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          {a.notes}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* ===================== */}
+            {/* 🎯 ROUTINES */}
+            {/* ===================== */}
+            <div className="border border-rose-200 rounded-xl p-3 flex flex-col gap-3">
+              <h3 className="text-rose-500 font-semibold">🎯 Routines</h3>
+
+              <AddRoutine practiceId={s.id} onDone={onClose} />
+              <EditRoutine practiceId={s.id} onDone={onClose} />
+
+              <div className="flex flex-col gap-2 mt-2">
+                {routines.length === 0 ? (
+                  <p className="text-sm text-gray-400">
+                    No routines for this practice
+                  </p>
+                ) : (
+                  routines.map((r) => (
+                    <div
+                      key={r.id}
+                      className="border border-rose-100 rounded-md p-2"
+                    >
+                      <div className="font-medium text-sm">{r.name}</div>
+
+                      {r.notes && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          {r.notes}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
