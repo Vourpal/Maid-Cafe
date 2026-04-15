@@ -28,9 +28,13 @@ const localizer = dateFnsLocalizer({
 
 export default function Practice() {
   const [sessions, setSessions] = useState<PracticeSessions[]>([]);
-  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
+    null,
+  );
   const [date, setDate] = useState(new Date());
-  const [view, setView] = useState<"month" | "week" | "day" | "agenda" | "work_week">("month");
+  const [view, setView] = useState<
+    "month" | "week" | "day" | "agenda" | "work_week"
+  >("month");
   const { user } = useUserAuthentication();
 
   useEffect(() => {
@@ -50,7 +54,7 @@ export default function Practice() {
     resource: session,
   }));
 
-  if (!user || !user.admin) return null;
+  if (!user) return null;
 
   return (
     <div>
@@ -72,7 +76,7 @@ export default function Practice() {
         onClose={() => setSelectedEvent(null)}
       />
 
-      <AddPractice setSessions={setSessions} />
+      {user && user.admin && <AddPractice setSessions={setSessions} />}
     </div>
   );
 }

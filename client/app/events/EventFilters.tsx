@@ -19,6 +19,7 @@ export default function EventFilters({
 
   const [searchTerm, setSearchTerm] = useState("");
 
+  //TODO: Filter for location maybe future
   function handleLocationChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const value = e.target.value;
     router.push(`/events?location=${value}&page=1`);
@@ -37,7 +38,7 @@ export default function EventFilters({
 
 return (
   <div className="flex flex-wrap gap-4 items-end mb-6">
-    <Field>
+    {/* <Field>
       <FieldLabel>Location</FieldLabel>
       <select
         onChange={handleLocationChange}
@@ -47,7 +48,7 @@ return (
         <option value="tampa">Tampa</option>
         <option value="orlando">Orlando</option>
       </select>
-    </Field>
+    </Field> */}
 
     <Field>
       <FieldLabel>Search</FieldLabel>

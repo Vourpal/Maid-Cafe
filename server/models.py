@@ -17,6 +17,9 @@ class UserMe(BaseModel):
     username: str
     admin: bool
 
+    type: str | None = None
+    availability: dict | None = None
+
 
 class UserRegister(BaseModel):
     first_name: str
@@ -32,6 +35,10 @@ class UserUpdate(BaseModel):
     email: str | None = None
     username: str | None = None
     password: str | None = None
+
+    # ✅ NEW FIELDS
+    type: str | None = None
+    availability: dict | None = None
 
 
 class UserAuthorization(UserBase):

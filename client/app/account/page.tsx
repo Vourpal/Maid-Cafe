@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUserAuthentication } from "../UserAuthentication";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -9,17 +9,31 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { authHeaders } from "@/lib/api";
 
+const days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+
 export default function Account() {
   const { user, loading, setUser } = useUserAuthentication();
 
   const [editingField, setEditingField] = useState<string | null>(null);
   const [newValue, setNewValue] = useState("");
 
+  // ✅ NEW: separate edit mode toggle for availability
+  const [isEditingAvailability, setIsEditingAvailability] = useState(false);
+  const [availabilityEdit, setAvailabilityEdit] = useState<any>({});
+
   const [changingPassword, setChangingPassword] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
+
+  console.log(user, "bruno data")
+
+  useEffect(() => {
+    if (user?.availability) {
+      setAvailabilityEdit(structuredClone(user.availability));
+    }
+  }, [user?.availability]);
 
   if (loading)
     return (
@@ -37,9 +51,62 @@ export default function Account() {
       </div>
     );
 
+  // =========================
+  // SAVE GENERIC FIELD
+  // =========================
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingField) return;
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/users/${user.id}`,
+        {
+          method: "PATCH",
+          headers: authHeaders(),
+          body: JSON.stringify({ [editingField]: newValue }),
+        }
+      );
+
+      if (!res.ok) return;
+
+      setUser({ ...user, [editingField]: newValue });
+      setEditingField(null);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // =========================
+  // SAVE AVAILABILITY
+  // =========================
+  async function handleAvailabilitySave() {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/users/${user.id}`,
+        {
+          method: "PATCH",
+          headers: authHeaders(),
+          body: JSON.stringify({ availability: availabilityEdit }),
+        }
+      );
+
+      if (!res.ok) return;
+
+      setUser({ ...user, availability: availabilityEdit });
+
+      // ✅ SWITCH BACK TO VIEW MODE
+      setIsEditingAvailability(false);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // =========================
+  // PASSWORD
+  // =========================
   async function handlePasswordSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!user) return;
 
     if (!currentPassword || !newPassword || !confirmPassword) {
       setPasswordError("All fields are required.");
@@ -52,15 +119,17 @@ export default function Account() {
     }
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${user.id}`, {
-        method: "PATCH",
-        // credentials: "include",
-        headers:authHeaders(),
-        body: JSON.stringify({
-          current_password: currentPassword,
-          password: newPassword,
-        }),
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/users/${user.id}`,
+        {
+          method: "PATCH",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            current_password: currentPassword,
+            password: newPassword,
+          }),
+        }
+      );
 
       if (!res.ok) {
         setPasswordError("Incorrect current password or server error.");
@@ -68,59 +137,49 @@ export default function Account() {
       }
 
       setChangingPassword(false);
+      setPasswordError("");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      setPasswordError("");
-    } catch (error) {
-      console.error("Error updating password:", error);
-      setPasswordError("Something went wrong.");
+    } catch (err) {
+      console.error(err);
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!editingField || !user) return;
-
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${user.id}`, {
-        method: "PATCH",
-        // credentials: "include",
-        headers: authHeaders(),
-        body: JSON.stringify({ [editingField]: newValue }),
-      });
-
-      if (!res.ok) {
-        console.error("Failed to update user");
-        return;
-      }
-
-      setUser({ ...user, [editingField]: newValue });
-      setEditingField(null);
-    } catch (error) {
-      console.error("Error updating user:", error);
-    }
-  }
-
+  // =========================
+  // RENDER
+  // =========================
   return (
-    <div className="max-w-lg mx-auto px-4 py-10">
+    <div className="max-w-lg mx-auto px-4 py-10 space-y-6">
+
+      {/* ================= MAIN CARD ================= */}
       <Card className="border-rose-200 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-rose-500 text-2xl">🎀 My Account</CardTitle>
+          <CardTitle className="text-rose-500 text-2xl">
+            🎀 My Account
+          </CardTitle>
         </CardHeader>
+
         <CardContent>
           <ul className="space-y-4">
+
             {[
               { label: "First Name", field: "first_name", value: user.first_name },
               { label: "Last Name", field: "last_name", value: user.last_name },
               { label: "Email", field: "email", value: user.email },
               { label: "Username", field: "username", value: user.username },
             ].map(({ label, field, value }) => (
-              <li key={field} className="flex items-center justify-between border-b border-rose-100 pb-3">
+              <li
+                key={field}
+                className="flex items-center justify-between border-b border-rose-100 pb-3"
+              >
                 <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wide">{label}</p>
+                  <p className="text-xs text-gray-400 uppercase tracking-wide">
+                    {label}
+                  </p>
                   <p className="text-gray-800 font-medium">{value}</p>
                 </div>
+
                 <Button
                   size="sm"
                   variant="outline"
@@ -135,11 +194,15 @@ export default function Account() {
               </li>
             ))}
 
+            {/* PASSWORD */}
             <li className="flex items-center justify-between border-b border-rose-100 pb-3">
               <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wide">Password</p>
+                <p className="text-xs text-gray-400 uppercase tracking-wide">
+                  Password
+                </p>
                 <p className="text-gray-800 font-medium">••••••••</p>
               </div>
+
               <Button
                 size="sm"
                 variant="outline"
@@ -154,7 +217,10 @@ export default function Account() {
           {/* PASSWORD FORM */}
           {changingPassword && (
             <form onSubmit={handlePasswordSubmit} className="mt-6 space-y-3">
-              {passwordError && <p className="text-red-500 text-sm">{passwordError}</p>}
+              {passwordError && (
+                <p className="text-red-500 text-sm">{passwordError}</p>
+              )}
+
               <FieldGroup>
                 <Field>
                   <FieldLabel>Current Password</FieldLabel>
@@ -169,14 +235,15 @@ export default function Account() {
                   <Input type="password" onChange={(e) => setConfirmPassword(e.target.value)} />
                 </Field>
               </FieldGroup>
+
               <div className="flex gap-2">
-                <Button type="submit" className="bg-rose-500 hover:bg-rose-600 text-white">
+                <Button className="bg-rose-500 hover:bg-rose-600 text-white" type="submit">
                   Save Password
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => { setChangingPassword(false); setPasswordError(""); }}
+                  onClick={() => setChangingPassword(false)}
                 >
                   Cancel
                 </Button>
@@ -184,17 +251,21 @@ export default function Account() {
             </form>
           )}
 
-          {/* FIELD EDIT FORM */}
-          {editingField && (
+          {/* GENERIC FIELD EDIT */}
+          {editingField && editingField !== "type" && (
             <form onSubmit={handleSubmit} className="mt-6 space-y-3">
               <FieldGroup>
                 <Field>
                   <FieldLabel>Edit {editingField.replace("_", " ")}</FieldLabel>
-                  <Input value={newValue} onChange={(e) => setNewValue(e.target.value)} />
+                  <Input
+                    value={newValue}
+                    onChange={(e) => setNewValue(e.target.value)}
+                  />
                 </Field>
               </FieldGroup>
+
               <div className="flex gap-2">
-                <Button type="submit" className="bg-rose-500 hover:bg-rose-600 text-white">
+                <Button className="bg-rose-500 hover:bg-rose-600 text-white" type="submit">
                   Save
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setEditingField(null)}>
@@ -205,6 +276,176 @@ export default function Account() {
           )}
         </CardContent>
       </Card>
+
+      {/* ================= ROLE CARD ================= */}
+      <Card className="border-rose-200 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-rose-500 text-2xl">
+            🏷️ Role
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent>
+          <div className="flex items-center justify-between border-b border-rose-100 pb-3">
+            <div>
+              <p className="text-xs text-gray-400 uppercase tracking-wide">Type</p>
+              <p className="text-gray-800 font-medium">
+                {user.type || "Not set"}
+              </p>
+            </div>
+
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-rose-300 text-rose-500 hover:bg-rose-50"
+              onClick={() => {
+                setEditingField("type");
+                setNewValue(user.type || "");
+              }}
+            >
+              Edit
+            </Button>
+          </div>
+
+          {editingField === "type" && (
+            <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+              <select
+                value={newValue}
+                onChange={(e) => setNewValue(e.target.value)}
+                className="w-full border rounded px-2 py-2"
+              >
+                <option value="">None</option>
+                <option value="maid">Maid</option>
+                <option value="butler">Butler</option>
+              </select>
+
+              <div className="flex gap-2">
+                <Button className="bg-rose-500 hover:bg-rose-600 text-white" type="submit">
+                  Save
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setEditingField(null)}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ================= AVAILABILITY CARD (FIXED UX) ================= */}
+      <Card className="border-rose-200 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-rose-500 text-2xl">
+            📅 Availability
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent>
+
+          {/* ========== VIEW MODE ========== */}
+          {!isEditingAvailability && (
+            <>
+              <div className="space-y-2">
+                {days.map((day) => {
+                  const d = user.availability?.[day];
+
+                  return (
+                    <div key={day} className="flex justify-between border-b border-rose-100 pb-2">
+                      <span className="uppercase text-gray-600 w-12">{day}</span>
+                      <span className="text-gray-800 font-medium">
+                        {d?.enabled
+                          ? `${d.start || "--"} → ${d.end || "--"}`
+                          : "Unavailable"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <Button
+                className="mt-4 bg-rose-500 hover:bg-rose-600 text-white"
+                onClick={() => setIsEditingAvailability(true)}
+              >
+                Edit Availability
+              </Button>
+            </>
+          )}
+
+          {/* ========== EDIT MODE ========== */}
+          {isEditingAvailability && (
+            <>
+              <div className="space-y-3">
+                {days.map((day) => {
+                  const d = availabilityEdit?.[day] || { enabled: false };
+
+                  return (
+                    <div key={day} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={d.enabled}
+                        onChange={(e) =>
+                          setAvailabilityEdit({
+                            ...availabilityEdit,
+                            [day]: { ...d, enabled: e.target.checked },
+                          })
+                        }
+                      />
+
+                      <span className="w-12 uppercase">{day}</span>
+
+                      {d.enabled && (
+                        <>
+                          <input
+                            type="time"
+                            value={d.start || ""}
+                            onChange={(e) =>
+                              setAvailabilityEdit({
+                                ...availabilityEdit,
+                                [day]: { ...d, start: e.target.value },
+                              })
+                            }
+                            className="border rounded px-1"
+                          />
+                          <span>→</span>
+                          <input
+                            type="time"
+                            value={d.end || ""}
+                            onChange={(e) =>
+                              setAvailabilityEdit({
+                                ...availabilityEdit,
+                                [day]: { ...d, end: e.target.value },
+                              })
+                            }
+                            className="border rounded px-1"
+                          />
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex gap-2 mt-4">
+                <Button
+                  className="bg-rose-500 hover:bg-rose-600 text-white"
+                  onClick={handleAvailabilitySave}
+                >
+                  Save
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditingAvailability(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </>
+          )}
+
+        </CardContent>
+      </Card>
+
     </div>
   );
 }

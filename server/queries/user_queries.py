@@ -1,5 +1,7 @@
 from models import UserBase, UserAuthorization, UserMe, UserUpdate
 
+from psycopg2.extras import Json
+
 
 # TODO: Add logic to check for duplicates before creating a new user
 def create_user(db, user: UserAuthorization):
@@ -40,7 +42,7 @@ def get_users(db):
             last_name=last_name,
             email=email,
             username=username,
-            admin=admin
+            admin=admin,
         )
         for (id, first_name, last_name, email, username, admin) in data
     ]
@@ -50,7 +52,7 @@ def get_users(db):
 def get_me(db, user_id: int):
     db.execute(
         """
-        SELECT id, first_name, last_name, email, username, admin
+        SELECT id, first_name, last_name, email, username, admin, type, availability
         FROM users
         WHERE id = %s;
         """,
@@ -60,14 +62,17 @@ def get_me(db, user_id: int):
     if row is None:
         return None
 
-    id, first_name, last_name, email, username, admin = row
+    id, first_name, last_name, email, username, admin, user_type, availability = row
+
     return UserMe(
+        id=id,
         first_name=first_name,
         last_name=last_name,
         email=email,
         username=username,
-        id=id,
         admin=admin,
+        type=user_type,
+        availability=availability,
     )
 
 
@@ -122,18 +127,32 @@ def update_user(db, user_id: int, user: UserUpdate):
     if user.first_name is not None:
         fields.append("first_name = %s")
         values.append(user.first_name)
+
     if user.last_name is not None:
         fields.append("last_name = %s")
         values.append(user.last_name)
+
     if user.email is not None:
         fields.append("email = %s")
         values.append(user.email)
+
     if user.username is not None:
         fields.append("username = %s")
         values.append(user.username)
+
     if user.password is not None:
         fields.append("password = %s")
         values.append(user.password)
+
+    # ✅ NEW FIELD: type (maid/butler)
+    if user.type is not None:
+        fields.append("type = %s")
+        values.append(user.type)
+
+    # ✅ FIXED FIELD: availability (JSONB safe)
+    if user.availability is not None:
+        fields.append("availability = %s")
+        values.append(Json(user.availability))  # 👈 IMPORTANT FIX
 
     if not fields:
         return None
@@ -144,6 +163,7 @@ def update_user(db, user_id: int, user: UserUpdate):
         WHERE id = %s
         RETURNING id;
     """
+
     values.append(user_id)
     db.execute(sql, tuple(values))
 

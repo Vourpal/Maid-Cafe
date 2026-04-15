@@ -8,15 +8,25 @@ import {
   ReactNode,
 } from "react";
 
+type Availability = {
+  [day: string]: {
+    enabled: boolean;
+    start?: string;
+    end?: string;
+  };
+};
+
 type User = {
   id: number;
   first_name: string;
   last_name: string;
-  email: string; // same with this
-  username: string; // might want to make this unique
+  email: string;
+  username: string;
   admin: boolean;
-};
 
+  type?: "maid" | "butler" | null;
+  availability?: Availability;
+};
 type UserContextType = {
   user: User | null;
   setUser: (user: User | null) => void;
@@ -34,26 +44,46 @@ export function UserAuthenticationProvider({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    async function fetchUser() {
+      const token = localStorage.getItem("token");
 
-    if (!token) {
-      setTimeout(() => {
+      if (!token) {
         setUser(null);
         setLoading(false);
-      }, 0);
-      return;
+        return;
+      }
+
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          throw new Error("Failed to fetch user");
+        }
+
+        const data = await res.json();
+
+        // 🔥 normalize user data (prevents undefined issues)
+        const normalizedUser: User = {
+          ...data.data,
+          is_maid: data.data.is_maid ?? false,
+          is_butler: data.data.is_butler ?? false,
+          availability: data.data.availability ?? "",
+        };
+
+        setUser(normalizedUser);
+      } catch (error) {
+        console.error("Auth error:", error);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
     }
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
-      // credentials: "include",   change this for when using cookies
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => setUser(data.data))
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false));
+    fetchUser();
   }, []);
 
   return (

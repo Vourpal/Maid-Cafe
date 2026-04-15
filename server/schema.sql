@@ -11,7 +11,13 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     admin BOOLEAN NOT NULL DEFAULT FALSE,
-    active BOOLEAN NOT NULL DEFAULT TRUE
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+
+    type VARCHAR(20),
+    availability JSONB DEFAULT '{}'::jsonb,
+
+    CONSTRAINT user_type_check
+    CHECK (type IN ('maid', 'butler') OR type IS NULL)
 );
 
 -- Events

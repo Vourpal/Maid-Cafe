@@ -8,6 +8,7 @@ import AddRoutine from "./AddRoutine";
 import EditRoutine from "./EditRoutine";
 import { authHeaders } from "@/lib/api";
 import { Attendance } from "@/types/event";
+import { useUserAuthentication } from "../UserAuthentication";
 
 type Routine = {
   id: number;
@@ -29,6 +30,7 @@ export default function ViewPractice({ event, onClose }: Props) {
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [loading, setLoading] = useState(false);
+  const { user } = useUserAuthentication();
 
   const session = event?.resource;
 
@@ -69,7 +71,7 @@ export default function ViewPractice({ event, onClose }: Props) {
 
           const routinesRes = await fetch(
             `${process.env.NEXT_PUBLIC_API_URL}/practice-sessions/${session.id}/routines`,
-            { headers: authHeaders() }
+            { headers: authHeaders() },
           );
 
           const routinesData = await routinesRes.json();
@@ -90,7 +92,7 @@ export default function ViewPractice({ event, onClose }: Props) {
 
           const attendanceRes = await fetch(
             `${process.env.NEXT_PUBLIC_API_URL}/practice-sessions/${session.id}/attendance`,
-            { headers: authHeaders() }
+            { headers: authHeaders() },
           );
 
           const attendanceData = await attendanceRes.json();
@@ -126,22 +128,30 @@ export default function ViewPractice({ event, onClose }: Props) {
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
         <div className="bg-white p-6 rounded-xl max-w-5xl w-full pointer-events-auto shadow-lg max-h-[90vh] overflow-y-auto">
-
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-rose-500 font-semibold text-lg">
               🎀 {s.title}
             </h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600"
+            >
               ✕
             </button>
           </div>
 
           {/* Session Info */}
           <div className="flex flex-col gap-2 text-sm mb-4">
-            <p><strong>📍 Location:</strong> {s.location || "N/A"}</p>
-            <p><strong>📅 Date:</strong> {new Date(s.date).toLocaleString()}</p>
-            <p><strong>📝 Notes:</strong> {s.notes || "None"}</p>
+            <p>
+              <strong>📍 Location:</strong> {s.location || "N/A"}
+            </p>
+            <p>
+              <strong>📅 Date:</strong> {new Date(s.date).toLocaleString()}
+            </p>
+            <p>
+              <strong>📝 Notes:</strong> {s.notes || "None"}
+            </p>
           </div>
 
           {loading ? (
@@ -150,36 +160,44 @@ export default function ViewPractice({ event, onClose }: Props) {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-4">
-
               {/* 👥 ATTENDANCE */}
               <div className="border border-rose-200 rounded-xl p-3 flex flex-col gap-3">
                 <h3 className="text-rose-500 font-semibold">👥 Attendance</h3>
 
-                <AddAttendance
-                  practiceId={s.id}
-                  onDone={(newAttendees) => {
-                    console.log("🔥 ADD ATTENDANCE CALLBACK:", newAttendees);
+                {user && user.admin && (
+                  <span>
+                    <AddAttendance
+                      practiceId={s.id}
+                      onDone={(newAttendees) => {
+                        console.log(
+                          "🔥 ADD ATTENDANCE CALLBACK:",
+                          newAttendees,
+                        );
 
-                    setAttendance((prev) => {
-                      const merged = [
-                        ...prev,
-                        ...(Array.isArray(newAttendees) ? newAttendees : []),
-                      ];
+                        setAttendance((prev) => {
+                          const merged = [
+                            ...prev,
+                            ...(Array.isArray(newAttendees)
+                              ? newAttendees
+                              : []),
+                          ];
 
-                      console.log("🔥 MERGED ATTENDANCE:", merged);
-                      return merged;
-                    });
-                  }}
-                />
+                          console.log("🔥 MERGED ATTENDANCE:", merged);
+                          return merged;
+                        });
+                      }}
+                    />
 
-                <EditAttendance
-                  practiceId={s.id}
-                  attendance={attendance}
-                  onDone={(updated) => {
-                    console.log("🔥 EDIT ATTENDANCE CALLBACK:", updated);
-                    setAttendance(updated);
-                  }}
-                />
+                    <EditAttendance
+                      practiceId={s.id}
+                      attendance={attendance}
+                      onDone={(updated) => {
+                        console.log("🔥 EDIT ATTENDANCE CALLBACK:", updated);
+                        setAttendance(updated);
+                      }}
+                    />
+                  </span>
+                )}
 
                 <div className="flex flex-col gap-2 mt-2">
                   {attendance.length === 0 ? (
@@ -188,16 +206,25 @@ export default function ViewPractice({ event, onClose }: Props) {
                     </p>
                   ) : (
                     attendance.map((a) => (
-                      <div key={a.id} className="border border-rose-100 rounded-md p-2">
+                      <div
+                        key={a.id}
+                        className="border border-rose-100 rounded-md p-2"
+                      >
                         <div className="flex justify-between text-sm">
                           <div className="font-medium">
                             {a.first_name} {a.last_name}
                           </div>
                           <div className="text-xs flex gap-2">
-                            <span className={a.attended ? "text-green-500" : "text-red-400"}>
+                            <span
+                              className={
+                                a.attended ? "text-green-500" : "text-red-400"
+                              }
+                            >
                               {a.attended ? "Present" : "Absent"}
                             </span>
-                            {a.late && <span className="text-yellow-500">Late</span>}
+                            {a.late && (
+                              <span className="text-yellow-500">Late</span>
+                            )}
                           </div>
                         </div>
 
@@ -216,22 +243,26 @@ export default function ViewPractice({ event, onClose }: Props) {
               <div className="border border-rose-200 rounded-xl p-3 flex flex-col gap-3">
                 <h3 className="text-rose-500 font-semibold">🎯 Routines</h3>
 
-                <AddRoutine
-                  practiceId={s.id}
-                  setRoutines={(updateFn) => {
-                    console.log("🔥 ADD ROUTINE UPDATE");
-                    setRoutines(updateFn);
-                  }}
-                />
+                {user && user.admin && (
+                  <span>
+                    <AddRoutine
+                      practiceId={s.id}
+                      setRoutines={(updateFn) => {
+                        console.log("🔥 ADD ROUTINE UPDATE");
+                        setRoutines(updateFn);
+                      }}
+                    />
 
-                <EditRoutine
-                  practiceId={s.id}
-                  routines={routines}
-                  onDone={(updated) => {
-                    console.log("🔥 EDIT ROUTINE CALLBACK:", updated);
-                    setRoutines(updated);
-                  }}
-                />
+                    <EditRoutine
+                      practiceId={s.id}
+                      routines={routines}
+                      onDone={(updated) => {
+                        console.log("🔥 EDIT ROUTINE CALLBACK:", updated);
+                        setRoutines(updated);
+                      }}
+                    />
+                  </span>
+                )}
 
                 <div className="flex flex-col gap-2 mt-2">
                   {routines.length === 0 ? (
@@ -240,7 +271,10 @@ export default function ViewPractice({ event, onClose }: Props) {
                     </p>
                   ) : (
                     routines.map((r) => (
-                      <div key={r.id} className="border border-rose-100 rounded-md p-2">
+                      <div
+                        key={r.id}
+                        className="border border-rose-100 rounded-md p-2"
+                      >
                         <div className="font-medium text-sm">{r.name}</div>
                         {r.notes && (
                           <div className="text-xs text-gray-500 mt-1">
@@ -252,7 +286,6 @@ export default function ViewPractice({ event, onClose }: Props) {
                   )}
                 </div>
               </div>
-
             </div>
           )}
         </div>

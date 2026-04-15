@@ -61,7 +61,7 @@ export default function NavBar() {
             </NavigationMenuItem>
           )}
 
-          {user && user.admin && (
+          {user && (
             <NavigationMenuItem>
               <Link href="/practice">
                 <Button variant="ghost" className="text-gray-700 hover:text-rose-500">
