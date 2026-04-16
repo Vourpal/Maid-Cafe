@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, make_response, request
+from flask import Blueprint, jsonify, request
 import bcrypt
 
 from queries.user_queries import get_me, get_user_by_email

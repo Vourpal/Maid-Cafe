@@ -13,7 +13,7 @@ from queries.user_queries import (
     delete_user,
 )
 from middleware import require_admin, require_auth
-from utils import success_response, error_response, APIError, get_db
+from utils import success_response, APIError, get_db
 
 user_bp = Blueprint("users", __name__)
 

@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useUserAuthentication } from "../UserAuthentication";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,6 @@ export default function Account() {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [newValue, setNewValue] = useState("");
 
-  // ✅ NEW: separate edit mode toggle for availability
   const [isEditingAvailability, setIsEditingAvailability] = useState(false);
   const [availabilityEdit, setAvailabilityEdit] = useState<any>({});
 
@@ -26,14 +26,6 @@ export default function Account() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
-
-  console.log(user, "bruno data")
-
-  useEffect(() => {
-    if (user?.availability) {
-      setAvailabilityEdit(structuredClone(user.availability));
-    }
-  }, [user?.availability]);
 
   if (loading)
     return (
@@ -52,11 +44,11 @@ export default function Account() {
     );
 
   // =========================
-  // SAVE GENERIC FIELD
+  // GENERIC FIELD UPDATE
   // =========================
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!editingField) return;
+    if (!editingField || !user) return;
 
     try {
       const res = await fetch(
@@ -64,13 +56,13 @@ export default function Account() {
         {
           method: "PATCH",
           headers: authHeaders(),
-          body: JSON.stringify({ [editingField]: newValue }),
+          body: JSON.stringify({ [editingField]: newValue }),//bracket needed to show correct key
         }
       );
 
       if (!res.ok) return;
 
-      setUser({ ...user, [editingField]: newValue });
+      setUser({ ...user, [editingField]: newValue }); //makes it so that you don't need to recall api to update stuff
       setEditingField(null);
     } catch (err) {
       console.error(err);
@@ -81,6 +73,8 @@ export default function Account() {
   // SAVE AVAILABILITY
   // =========================
   async function handleAvailabilitySave() {
+    if (!user) return;
+
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/users/${user.id}`,
@@ -94,8 +88,6 @@ export default function Account() {
       if (!res.ok) return;
 
       setUser({ ...user, availability: availabilityEdit });
-
-      // ✅ SWITCH BACK TO VIEW MODE
       setIsEditingAvailability(false);
     } catch (err) {
       console.error(err);
@@ -107,6 +99,8 @@ export default function Account() {
   // =========================
   async function handlePasswordSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    if (!user) return;
 
     if (!currentPassword || !newPassword || !confirmPassword) {
       setPasswordError("All fields are required.");
@@ -152,7 +146,7 @@ export default function Account() {
   return (
     <div className="max-w-lg mx-auto px-4 py-10 space-y-6">
 
-      {/* ================= MAIN CARD ================= */}
+      {/* MAIN CARD */}
       <Card className="border-rose-200 shadow-sm">
         <CardHeader>
           <CardTitle className="text-rose-500 text-2xl">
@@ -277,7 +271,7 @@ export default function Account() {
         </CardContent>
       </Card>
 
-      {/* ================= ROLE CARD ================= */}
+      {/* ROLE CARD */}
       <Card className="border-rose-200 shadow-sm">
         <CardHeader>
           <CardTitle className="text-rose-500 text-2xl">
@@ -332,7 +326,7 @@ export default function Account() {
         </CardContent>
       </Card>
 
-      {/* ================= AVAILABILITY CARD (FIXED UX) ================= */}
+      {/* AVAILABILITY CARD */}
       <Card className="border-rose-200 shadow-sm">
         <CardHeader>
           <CardTitle className="text-rose-500 text-2xl">
@@ -342,7 +336,7 @@ export default function Account() {
 
         <CardContent>
 
-          {/* ========== VIEW MODE ========== */}
+          {/* VIEW MODE */}
           {!isEditingAvailability && (
             <>
               <div className="space-y-2">
@@ -362,16 +356,20 @@ export default function Account() {
                 })}
               </div>
 
+              {/* ✅ FIXED: initialize edit state HERE */}
               <Button
                 className="mt-4 bg-rose-500 hover:bg-rose-600 text-white"
-                onClick={() => setIsEditingAvailability(true)}
+                onClick={() => {
+                  setAvailabilityEdit(structuredClone(user.availability || {}));
+                  setIsEditingAvailability(true);
+                }}
               >
                 Edit Availability
               </Button>
             </>
           )}
 
-          {/* ========== EDIT MODE ========== */}
+          {/* EDIT MODE */}
           {isEditingAvailability && (
             <>
               <div className="space-y-3">

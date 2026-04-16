@@ -69,9 +69,8 @@ export function UserAuthenticationProvider({
         // 🔥 normalize user data (prevents undefined issues)
         const normalizedUser: User = {
           ...data.data,
-          is_maid: data.data.is_maid ?? false,
-          is_butler: data.data.is_butler ?? false,
-          availability: data.data.availability ?? "",
+          type: data.data.type ?? null,
+          availability: data.data.availability ?? {},
         };
 
         setUser(normalizedUser);
