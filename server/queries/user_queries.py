@@ -27,7 +27,7 @@ def create_user(db, user: UserAuthorization):
 
 def get_users(db):
     db.execute("""
-        SELECT id, first_name, last_name, email, username, admin
+        SELECT id, first_name, last_name, email, username, admin, type, availability
         FROM users
     """)
 
@@ -43,8 +43,10 @@ def get_users(db):
             email=email,
             username=username,
             admin=admin,
+            type=type,
+            availability=availability
         )
-        for (id, first_name, last_name, email, username, admin) in data
+        for (id, first_name, last_name, email, username, admin, type, availability) in data
     ]
 
 

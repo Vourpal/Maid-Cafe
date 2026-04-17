@@ -21,7 +21,7 @@ export default function NavBar() {
       // credentials: "include",
       headers: authHeadersNoContent(),
     });
-    localStorage.removeItem("token")
+    localStorage.removeItem("token");
     setUser(null);
     router.push("/login");
   }
@@ -44,8 +44,21 @@ export default function NavBar() {
       <NavigationMenu>
         <NavigationMenuList className="flex gap-2">
           <NavigationMenuItem>
+            <Link href="/admin">
+              <Button
+                variant="ghost"
+                className="text-gray-700 hover:text-rose-500"
+              >
+                Admin
+              </Button>
+            </Link>
+          </NavigationMenuItem>
+          <NavigationMenuItem>
             <Link href="/events">
-              <Button variant="ghost" className="text-gray-700 hover:text-rose-500">
+              <Button
+                variant="ghost"
+                className="text-gray-700 hover:text-rose-500"
+              >
                 Events
               </Button>
             </Link>
@@ -53,9 +66,12 @@ export default function NavBar() {
 
           {user && (
             <NavigationMenuItem>
-              <Link href="/account">
-                <Button variant="ghost" className="text-gray-700 hover:text-rose-500">
-                  {user.first_name}
+              <Link href="/practice">
+                <Button
+                  variant="ghost"
+                  className="text-gray-700 hover:text-rose-500"
+                >
+                  Practice
                 </Button>
               </Link>
             </NavigationMenuItem>
@@ -63,9 +79,12 @@ export default function NavBar() {
 
           {user && (
             <NavigationMenuItem>
-              <Link href="/practice">
-                <Button variant="ghost" className="text-gray-700 hover:text-rose-500">
-                  Practice
+              <Link href="/account">
+                <Button
+                  variant="ghost"
+                  className="text-gray-700 hover:text-rose-500"
+                >
+                  {user.first_name}
                 </Button>
               </Link>
             </NavigationMenuItem>
