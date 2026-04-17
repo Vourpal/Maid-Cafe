@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 # Helpers
 # ────────────────────────────────────────────────────────────
 
+
 def generate_code():
     return "CLUB-" + "".join(
         random.choices(string.ascii_uppercase + string.digits, k=6)
@@ -28,6 +29,7 @@ def invite_row_to_dict(row):
 # Create Invite
 # ────────────────────────────────────────────────────────────
 
+
 def create_invite(db, created_by: int, max_uses: int, expires_at):
     code = generate_code()
 
@@ -48,6 +50,7 @@ def create_invite(db, created_by: int, max_uses: int, expires_at):
 # Get All Invites
 # ────────────────────────────────────────────────────────────
 
+
 def get_invites(db):
     db.execute(
         """
@@ -64,6 +67,7 @@ def get_invites(db):
 # ────────────────────────────────────────────────────────────
 # Validate Invite
 # ────────────────────────────────────────────────────────────
+
 
 def validate_invite(db, code: str):
     db.execute(
@@ -83,8 +87,14 @@ def validate_invite(db, code: str):
 
     now = datetime.now(timezone.utc)
 
+    expires_at = invite["expires_at"]
+
+    # normalize postgres timestamp -> UTC aware
+    if expires_at and expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+
     # expired
-    if invite["expires_at"] and invite["expires_at"] < now:
+    if expires_at and expires_at < now:
         return None
 
     # usage exceeded
@@ -97,6 +107,7 @@ def validate_invite(db, code: str):
 # ────────────────────────────────────────────────────────────
 # Use Invite (atomic)
 # ────────────────────────────────────────────────────────────
+
 
 def use_invite(db, code: str):
     db.execute(

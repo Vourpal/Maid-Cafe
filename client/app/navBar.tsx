@@ -46,7 +46,7 @@ export default function NavBar() {
         {/* RIGHT — Nav links */}
         <NavigationMenu className="w-full sm:w-auto">
           <NavigationMenuList className="flex flex-wrap sm:flex-nowrap gap-2 sm:gap-2 items-center justify-start sm:justify-end">
-            {user && (
+            {user && user.admin && (
               <NavigationMenuItem>
                 <Link href="/admin">
                   <Button
