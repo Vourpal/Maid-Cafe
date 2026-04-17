@@ -13,6 +13,7 @@ interface StaffMember {
   first_name: string;
   last_name: string;
   type: string | null;
+  username: string;
   availability: Record<
     string,
     { enabled: boolean; start?: string; end?: string }
@@ -374,7 +375,7 @@ export default function Admin() {
                         {member.first_name} {member.last_name}
                       </p>
                       <p className="text-xs text-gray-400 uppercase tracking-wide mt-0.5">
-                        {member.type ?? "Unknown"}
+                        {member.username ?? "Unknown"}
                       </p>
                     </div>
 

@@ -161,7 +161,7 @@ export default function Account() {
               { label: "First Name", field: "first_name", value: user.first_name },
               { label: "Last Name", field: "last_name", value: user.last_name },
               { label: "Email", field: "email", value: user.email },
-              { label: "Username", field: "username", value: user.username },
+              { label: "Butler/Maid Name", field: "username", value: user.username },
             ].map(({ label, field, value }) => (
               <li
                 key={field}

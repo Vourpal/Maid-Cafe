@@ -87,10 +87,10 @@ export default function NewUser() {
                 />
               </Field>
               <Field>
-                <FieldLabel>Username</FieldLabel>
+                <FieldLabel>Butler/Maid Name</FieldLabel>
                 <Input
                   type="text"
-                  placeholder="Username"
+                  placeholder="Use assigned cafe name"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                 />
