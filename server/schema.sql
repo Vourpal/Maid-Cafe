@@ -105,3 +105,16 @@ CREATE TABLE IF NOT EXISTS practice_session_routines (
 
     UNIQUE (practice_session_id, routine_id)
 );
+
+CREATE TABLE invite_codes (
+  id SERIAL PRIMARY KEY,
+  code TEXT UNIQUE NOT NULL,
+  created_by INTEGER REFERENCES users(id),
+
+  max_uses INTEGER DEFAULT 1,
+  uses INTEGER DEFAULT 0,
+
+  expires_at TIMESTAMP NULL,
+
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

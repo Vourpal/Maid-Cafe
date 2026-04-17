@@ -16,6 +16,8 @@ export default function NewUser() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const [inviteCode, setInviteCode] = useState("");
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -31,6 +33,7 @@ export default function NewUser() {
           email,
           username,
           password,
+          invite_code: inviteCode,
         }),
       });
 
@@ -46,7 +49,9 @@ export default function NewUser() {
     <div className="max-w-md mx-auto px-4 py-10">
       <Card className="border-rose-200 shadow-sm">
         <CardHeader className="text-center">
-          <CardTitle className="text-rose-500 text-2xl">🎀 Join the Team</CardTitle>
+          <CardTitle className="text-rose-500 text-2xl">
+            🎀 Join the Team
+          </CardTitle>
           <p className="text-gray-400 text-sm">
             Please provide your information to become a part of the team!
           </p>
@@ -99,12 +104,23 @@ export default function NewUser() {
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </Field>
+
+              <Field>
+                <FieldLabel>
+                  Invite Code <span className="text-rose-400">*</span>
+                </FieldLabel>
+                <Input
+                  type="text"
+                  placeholder="Enter your invite code"
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value)}
+                  className="uppercase"
+                />
+              </Field>
             </FieldGroup>
 
             {error && <p className="text-red-500 text-sm">{error}</p>}
-            {success && (
-              <p className="text-green-600 text-sm">{success}</p>
-            )}
+            {success && <p className="text-green-600 text-sm">{success}</p>}
 
             <Button
               type="submit"

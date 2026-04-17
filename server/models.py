@@ -1,6 +1,19 @@
-from datetime import datetime
+from typing import Optional
 from pydantic import BaseModel
+from datetime import datetime
 
+class InviteCreate(BaseModel):
+    max_uses: int = 1
+    expires_at: Optional[datetime] = None
+
+
+class Invite(BaseModel):
+    id: int
+    code: str
+    created_by: Optional[int]
+    max_uses: int
+    uses: int
+    expires_at: Optional[datetime]
 
 class UserBase(BaseModel):
     first_name: str

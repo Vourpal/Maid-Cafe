@@ -43,16 +43,18 @@ export default function NavBar() {
       {/* RIGHT — Nav links */}
       <NavigationMenu>
         <NavigationMenuList className="flex gap-2">
-          <NavigationMenuItem>
-            <Link href="/admin">
-              <Button
-                variant="ghost"
-                className="text-gray-700 hover:text-rose-500"
-              >
-                Admin
-              </Button>
-            </Link>
-          </NavigationMenuItem>
+          {user && (
+            <NavigationMenuItem>
+              <Link href="/admin">
+                <Button
+                  variant="ghost"
+                  className="text-gray-700 hover:text-rose-500"
+                >
+                  Admin
+                </Button>
+              </Link>
+            </NavigationMenuItem>
+          )}
           <NavigationMenuItem>
             <Link href="/events">
               <Button

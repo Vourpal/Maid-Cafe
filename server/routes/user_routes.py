@@ -3,6 +3,8 @@ import bcrypt
 from psycopg2 import errors as pg_errors
 from pydantic import ValidationError
 from models import UserRegister, UserAuthorization, UserUpdate
+from queries.invite_queries import validate_invite, use_invite
+from datetime import datetime
 from queries.user_queries import (
     get_me,
     get_user_by_email,
@@ -17,7 +19,8 @@ from utils import success_response, APIError, get_db
 
 user_bp = Blueprint("users", __name__)
 
-#TODO: add validation errors
+
+# TODO: add validation errors
 @user_bp.route("/users", methods=["GET"])
 @require_admin
 def get_all_users(user_id):
@@ -31,6 +34,14 @@ def create_new_user():
     try:
         with get_db() as (conn, cur):
             data = request.get_json()
+
+            invite_code = data.get("invite_code")
+            if not invite_code:
+                raise APIError("INVITE_REQUIRED", "Invite code is required", 400)
+
+            invite = validate_invite(cur, invite_code)
+            if not invite:
+                raise APIError("INVALID_INVITE", "Invalid or expired invite code", 400)
 
             try:  # ← wrap just the validation
                 reg_data = UserRegister(**data)
@@ -51,6 +62,9 @@ def create_new_user():
             )
             new_user_data.password = hashed_pw.decode("utf-8")
             new_user_id = create_user(cur, new_user_data)
+            used = use_invite(cur, invite_code)
+            if not used:
+                raise APIError("INVITE_RACE_CONDITION", "Invite already used", 400)
             return success_response({"id": new_user_id}, 201)
 
     except pg_errors.UniqueViolation as e:

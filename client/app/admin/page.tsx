@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-
+import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { useUserAuthentication } from "../UserAuthentication";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,11 +19,28 @@ interface StaffMember {
   >;
 }
 
+interface Invite {
+  id: number;
+  code: string;
+  created_by: number | null;
+  max_uses: number;
+  uses: number;
+  expires_at: string | null;
+}
+
 export default function Admin() {
   const { user, loading } = useUserAuthentication();
 
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [staffLoading, setStaffLoading] = useState(true);
+
+  const [maxUses, setMaxUses] = useState(1);
+  const [expiresAt, setExpiresAt] = useState("");
+  const [generatedCode, setGeneratedCode] = useState<string | null>(null);
+  const [inviteLoading, setInviteLoading] = useState(false);
+
+  const [invites, setInvites] = useState<Invite[]>([]);
+  const [invitesLoading, setInvitesLoading] = useState(true);
 
   useEffect(() => {
     // Only fetch if user is confirmed to be an admin
@@ -57,8 +73,94 @@ export default function Admin() {
   }, [user]);
 
   useEffect(() => {
-    console.log(staff, "UPDATED staff data");
-  }, [staff]);
+    if (!user?.admin) return;
+
+    async function fetchInvites() {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/invites`, {
+          headers: authHeaders(),
+        });
+
+        if (!res.ok) return;
+
+        const json = await res.json();
+        setInvites(json.data || json);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setInvitesLoading(false);
+      }
+    }
+
+    fetchInvites();
+  }, [user]);
+
+  async function handleGenerateInvite() {
+    setInviteLoading(true);
+    setGeneratedCode(null);
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/invites`, {
+        method: "POST",
+        headers: {
+          ...authHeaders(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          max_uses: maxUses,
+          expires_at: expiresAt || null,
+        }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        console.error(json);
+        toast.error("Failed to generate invite code");
+        return;
+      }
+
+      const invite = json.data;
+
+      setGeneratedCode(invite.code);
+
+      // ✅ AUTO COPY
+      await navigator.clipboard.writeText(invite.code);
+
+      // ✅ TOAST
+      toast.success("Invite code copied to clipboard!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong");
+    } finally {
+      setInviteLoading(false);
+    }
+  }
+
+  async function handleRevoke(id: number) {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/invites/${id}`,
+        {
+          method: "DELETE",
+          headers: authHeaders(),
+        },
+      );
+
+      if (!res.ok) throw new Error();
+
+      toast.success("Invite revoked");
+
+      setInvites((prev) => prev.filter((i) => i.id !== id));
+    } catch {
+      toast.error("Failed to revoke invite");
+    }
+  }
+
+  function handleCopy(code: string) {
+    navigator.clipboard.writeText(code);
+    toast.success("Copied to clipboard!");
+  }
 
   // ── Auth loading ──────────────────────────────────────────
   if (loading) {
@@ -90,6 +192,155 @@ export default function Admin() {
             🛡️ Admin Panel
           </CardTitle>
         </CardHeader>
+      </Card>
+
+      {/* INVITE CARD */}
+      <Card className="border-rose-200 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-rose-500 text-2xl">
+            🎟️ Invite Codes
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          {/* Inputs */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Max Uses */}
+            <div>
+              <label className="text-xs text-gray-400 uppercase">
+                Max Uses
+              </label>
+              <input
+                type="number"
+                min={1}
+                value={maxUses}
+                onChange={(e) => setMaxUses(Number(e.target.value))}
+                className="w-full mt-1 border rounded-md px-2 py-1 text-sm"
+              />
+            </div>
+
+            {/* Expiration */}
+            <div>
+              <label className="text-xs text-gray-400 uppercase">
+                Expiration (optional)
+              </label>
+              <input
+                type="datetime-local"
+                value={expiresAt}
+                onChange={(e) => setExpiresAt(e.target.value)}
+                className="w-full mt-1 border rounded-md px-2 py-1 text-sm"
+              />
+            </div>
+          </div>
+
+          {/* Generate Button */}
+          <button
+            onClick={handleGenerateInvite}
+            disabled={inviteLoading}
+            className="w-full bg-rose-500 hover:bg-rose-600 text-white text-sm font-medium py-2 rounded-md transition"
+          >
+            {inviteLoading ? "Generating..." : "Generate Invite Code"}
+          </button>
+
+          {/* Result */}
+          {generatedCode && (
+            <div className="bg-rose-50 border border-rose-200 rounded-md p-3 text-center space-y-2">
+              <p className="text-xs text-gray-400 uppercase">Generated Code</p>
+
+              <p className="text-lg font-semibold text-rose-600 tracking-widest">
+                {generatedCode}
+              </p>
+
+              <button
+                onClick={() => handleCopy(generatedCode)}
+                className="text-xs bg-white border border-rose-200 px-3 py-1 rounded-md hover:bg-rose-100 transition"
+              >
+                Copy Code
+              </button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* INVITES LIST */}
+      <Card className="border-rose-200 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-rose-500 text-2xl">
+            📋 Active Invite Codes
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent>
+          {invitesLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+            </div>
+          ) : invites.length === 0 ? (
+            <p className="text-sm text-gray-400">No invites found.</p>
+          ) : (
+            <div className="space-y-3">
+              {invites.map((invite) => {
+                const isExpired =
+                  invite.expires_at && new Date(invite.expires_at) < new Date();
+
+                const isUsedUp = invite.uses >= invite.max_uses;
+
+                return (
+                  <div
+                    key={invite.id}
+                    className="border border-rose-100 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+                  >
+                    {/* Left side */}
+                    <div className="space-y-1">
+                      <p className="font-mono text-rose-600 font-semibold tracking-widest">
+                        {invite.code}
+                      </p>
+
+                      <p className="text-xs text-gray-400">
+                        {invite.uses} / {invite.max_uses} uses
+                        {invite.expires_at && (
+                          <>
+                            {" · "}
+                            Expires{" "}
+                            {new Date(invite.expires_at).toLocaleDateString()}
+                          </>
+                        )}
+                      </p>
+
+                      <div className="flex gap-2 text-xs">
+                        {isExpired && (
+                          <span className="text-red-500">Expired</span>
+                        )}
+                        {isUsedUp && (
+                          <span className="text-gray-500">Used up</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleCopy(invite.code)}
+                        className="text-xs bg-white border border-rose-200 px-3 py-1 rounded-md hover:bg-rose-100 transition"
+                      >
+                        Copy
+                      </button>
+
+                      <button
+                        onClick={() => handleRevoke(invite.id)}
+                        className="text-xs bg-red-50 border border-red-200 px-3 py-1 rounded-md hover:bg-red-100 transition"
+                      >
+                        Revoke
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
       </Card>
 
       {/* STAFF CARD */}
