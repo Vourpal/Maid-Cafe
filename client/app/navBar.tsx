@@ -32,89 +32,94 @@ export default function NavBar() {
         <Skeleton className="h-8 w-64" />
       </div>
     );
-
   return (
-    <nav className="w-full border-b border-rose-200 bg-white px-6 py-3 flex items-center justify-between shadow-sm">
-      {/* LEFT — Logo */}
-      <Link href="/" className="text-rose-500 font-bold text-xl tracking-wide">
-        🎀 Maid Cafe
-      </Link>
+    <nav className="w-full border-b border-rose-200 bg-white px-4 sm:px-6 py-3 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        {/* LEFT — Logo */}
+        <Link
+          href="/"
+          className="text-rose-500 font-bold text-xl tracking-wide"
+        >
+          🎀 Maid Cafe
+        </Link>
 
-      {/* RIGHT — Nav links */}
-      <NavigationMenu>
-        <NavigationMenuList className="flex gap-2">
-          {user && (
+        {/* RIGHT — Nav links */}
+        <NavigationMenu className="w-full sm:w-auto">
+          <NavigationMenuList className="flex flex-wrap sm:flex-nowrap gap-2 sm:gap-2 items-center justify-start sm:justify-end">
+            {user && (
+              <NavigationMenuItem>
+                <Link href="/admin">
+                  <Button
+                    variant="ghost"
+                    className="text-gray-700 hover:text-rose-500"
+                  >
+                    Admin
+                  </Button>
+                </Link>
+              </NavigationMenuItem>
+            )}
+
             <NavigationMenuItem>
-              <Link href="/admin">
+              <Link href="/events">
                 <Button
                   variant="ghost"
                   className="text-gray-700 hover:text-rose-500"
                 >
-                  Admin
+                  Events
                 </Button>
               </Link>
             </NavigationMenuItem>
-          )}
-          <NavigationMenuItem>
-            <Link href="/events">
-              <Button
-                variant="ghost"
-                className="text-gray-700 hover:text-rose-500"
-              >
-                Events
-              </Button>
-            </Link>
-          </NavigationMenuItem>
 
-          {user && (
-            <NavigationMenuItem>
-              <Link href="/practice">
+            {user && (
+              <NavigationMenuItem>
+                <Link href="/practice">
+                  <Button
+                    variant="ghost"
+                    className="text-gray-700 hover:text-rose-500"
+                  >
+                    Practice
+                  </Button>
+                </Link>
+              </NavigationMenuItem>
+            )}
+
+            {user && (
+              <NavigationMenuItem>
+                <Link href="/account">
+                  <Button
+                    variant="ghost"
+                    className="text-gray-700 hover:text-rose-500"
+                  >
+                    {user.first_name}
+                  </Button>
+                </Link>
+              </NavigationMenuItem>
+            )}
+
+            {!user && (
+              <NavigationMenuItem>
+                <Link href="/login">
+                  <Button className="bg-rose-500 hover:bg-rose-600 text-white rounded-full px-5">
+                    Login
+                  </Button>
+                </Link>
+              </NavigationMenuItem>
+            )}
+
+            {user && (
+              <NavigationMenuItem>
                 <Button
-                  variant="ghost"
-                  className="text-gray-700 hover:text-rose-500"
+                  onClick={handleLogout}
+                  variant="outline"
+                  className="border-rose-300 text-rose-500 hover:bg-rose-50 rounded-full px-5"
                 >
-                  Practice
+                  Logout
                 </Button>
-              </Link>
-            </NavigationMenuItem>
-          )}
-
-          {user && (
-            <NavigationMenuItem>
-              <Link href="/account">
-                <Button
-                  variant="ghost"
-                  className="text-gray-700 hover:text-rose-500"
-                >
-                  {user.first_name}
-                </Button>
-              </Link>
-            </NavigationMenuItem>
-          )}
-
-          {!user && (
-            <NavigationMenuItem>
-              <Link href="/login">
-                <Button className="bg-rose-500 hover:bg-rose-600 text-white rounded-full px-5">
-                  Login
-                </Button>
-              </Link>
-            </NavigationMenuItem>
-          )}
-
-          {user && (
-            <NavigationMenuItem>
-              <Button
-                onClick={handleLogout}
-                variant="outline"
-                className="border-rose-300 text-rose-500 hover:bg-rose-50 rounded-full px-5"
-              >
-                Logout
-              </Button>
-            </NavigationMenuItem>
-          )}
-        </NavigationMenuList>
-      </NavigationMenu>
+              </NavigationMenuItem>
+            )}
+          </NavigationMenuList>
+        </NavigationMenu>
+      </div>
     </nav>
   );
 }
