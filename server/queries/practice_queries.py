@@ -23,7 +23,7 @@ def post_practice_sessions(db, session: PracticeSession):
         INSERT INTO practice_sessions (title, location, date, notes)
         VALUES (%s, %s, %s, %s)
         RETURNING id""",
-        (session.title, session.location, session.date, session.notes),
+        (session.title, session.location, session.date_utc, session.notes),
     )
     return db.fetchone()[0]
 

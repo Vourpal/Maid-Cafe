@@ -1,4 +1,5 @@
 from typing import Optional
+from zoneinfo import ZoneInfo
 from pydantic import BaseModel
 from datetime import datetime
 
@@ -131,4 +132,13 @@ class PracticeSession(BaseModel):
     title: str
     location: str | None = None
     date: datetime
-    notes: str | None = None  # also make notes optional
+    notes: str | None = None
+
+    model_config = {"arbitrary_types_allowed": True}
+
+    @property
+    def date_utc(self) -> datetime:
+        if self.date.tzinfo is None:
+            # If no timezone info, assume UTC
+            return self.date.replace(tzinfo=ZoneInfo("UTC"))
+        return self.date.astimezone(ZoneInfo("UTC"))
