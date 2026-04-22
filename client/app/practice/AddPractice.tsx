@@ -23,12 +23,20 @@ export default function AddPractice({ setSessions }: PracticeProps) {
     e.preventDefault();
 
     try {
+      // ✅ Convert datetime-local → SQL format
+      const formattedDate = date.replace("T", " ") + ":00";
+
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/practice-sessions`,
         {
           method: "POST",
           headers: authHeaders(),
-          body: JSON.stringify({ title, location, date, notes }),
+          body: JSON.stringify({
+            title,
+            location,
+            date: formattedDate,
+            notes,
+          }),
         }
       );
 
@@ -40,7 +48,7 @@ export default function AddPractice({ setSessions }: PracticeProps) {
         id: data.data.id,
         title,
         location,
-        date,
+        date: formattedDate, // ✅ keep consistent with backend format
         notes,
       };
 
@@ -93,18 +101,25 @@ export default function AddPractice({ setSessions }: PracticeProps) {
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 <Field>
                   <FieldLabel>Title</FieldLabel>
-                  <Input value={title} onChange={(e) => setTitle(e.target.value)} required />
+                  <Input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    required
+                  />
                 </Field>
 
                 <Field>
                   <FieldLabel>Location</FieldLabel>
-                  <Input value={location} onChange={(e) => setLocation(e.target.value)} />
+                  <Input
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                  />
                 </Field>
 
                 <Field>
-                  <FieldLabel>Date</FieldLabel>
+                  <FieldLabel>Date & Time</FieldLabel>
                   <Input
-                    type="date"
+                    type="datetime-local" // ✅ updated
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
                     required

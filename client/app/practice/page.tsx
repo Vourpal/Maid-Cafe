@@ -26,11 +26,6 @@ const localizer = dateFnsLocalizer({
   locales: { "en-US": enUS },
 });
 
-const localDate = (dateStr: string): Date => {
-  const [year, month, day] = dateStr.split("-").map(Number);
-  return new Date(year, month - 1, day);
-};
-
 export default function Practice() {
   const [sessions, setSessions] = useState<PracticeSessions[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
@@ -54,8 +49,8 @@ export default function Practice() {
 
   const calendarEvents: CalendarEvent[] = sessions.map((session) => ({
     title: session.title,
-    start: localDate(session.date),
-    end: localDate(session.date),
+    start: new Date(session.date),
+    end: new Date(session.date),
     resource: session,
   }));
 
