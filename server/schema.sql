@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS practice_sessions (
     id SERIAL PRIMARY KEY,
     title VARCHAR(100) NOT NULL,
     location VARCHAR(100),
-    date TIMESTAMP NOT NULL,
+    date TIMESTAMPTZ NOT NULL,
     notes VARCHAR(255)
 );
 
