@@ -49,6 +49,28 @@ def get_users(db):
         for (id, first_name, last_name, email, username, admin, type, availability) in data
     ]
 
+def get_admins(db):
+    db.execute("""
+        SELECT id, first_name, last_name, email, username, admin, type, availability
+        FROM users
+        WHERE admin IS True
+    """)
+    data = db.fetchall()
+    if not data:
+        return []
+    return [
+        UserMe(
+            id=id,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            username=username,
+            admin=admin,
+            type=type,
+            availability=availability
+        )
+        for (id, first_name, last_name, email, username, admin, type, availability) in data
+    ]
 
 # TODO: consider adding isActive in this for future reference
 def get_me(db, user_id: int):
