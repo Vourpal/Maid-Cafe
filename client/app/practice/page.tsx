@@ -1,4 +1,5 @@
 "use client";
+
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { enUS } from "date-fns/locale";
@@ -33,6 +34,7 @@ export default function Practice() {
   const [view, setView] = useState<
     "month" | "week" | "day" | "agenda" | "work_week"
   >("month");
+
   const { user } = useUserAuthentication();
 
   useEffect(() => {
@@ -51,14 +53,14 @@ export default function Practice() {
     .map((session) => {
       const start = new Date(session.date);
 
-      // 🚨 Skip invalid dates (prevents calendar from breaking silently)
+      // 🚨 guard against bad dates
       if (isNaN(start.getTime())) {
         console.error("Invalid date:", session.date);
         return null;
       }
 
-      // ✅ Give event a duration (required for proper rendering)
-      const end = new Date(start.getTime() + 60 * 60 * 1000); // +1 hour
+      // ✅ REQUIRED: give events a duration so they render properly
+      const end = new Date(start.getTime() + 60 * 60 * 1000);
 
       return {
         title: session.title,
