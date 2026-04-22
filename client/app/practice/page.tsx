@@ -28,9 +28,7 @@ const localizer = dateFnsLocalizer({
 
 export default function Practice() {
   const [sessions, setSessions] = useState<PracticeSessions[]>([]);
-  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
-    null,
-  );
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [date, setDate] = useState(new Date());
   const [view, setView] = useState<
     "month" | "week" | "day" | "agenda" | "work_week"
@@ -44,15 +42,32 @@ export default function Practice() {
     })
       .then((res) => res.json())
       .then((data) => setSessions(data.data))
-      .catch((err) => console.error("Failed to fetch practice sessions:", err));
+      .catch((err) =>
+        console.error("Failed to fetch practice sessions:", err)
+      );
   }, []);
 
-  const calendarEvents: CalendarEvent[] = sessions.map((session) => ({
-    title: session.title,
-    start: new Date(session.date),
-    end: new Date(session.date),
-    resource: session,
-  }));
+  const calendarEvents: CalendarEvent[] = sessions
+    .map((session) => {
+      const start = new Date(session.date);
+
+      // 🚨 Skip invalid dates (prevents calendar from breaking silently)
+      if (isNaN(start.getTime())) {
+        console.error("Invalid date:", session.date);
+        return null;
+      }
+
+      // ✅ Give event a duration (required for proper rendering)
+      const end = new Date(start.getTime() + 60 * 60 * 1000); // +1 hour
+
+      return {
+        title: session.title,
+        start,
+        end,
+        resource: session,
+      };
+    })
+    .filter(Boolean) as CalendarEvent[];
 
   if (!user) return null;
 
