@@ -12,6 +12,18 @@ type PracticeProps = {
   setSessions: React.Dispatch<React.SetStateAction<PracticeSessions[]>>;
 };
 
+function toLocalISOWithOffset(datetimeLocal: string): string {
+  // datetimeLocal is "YYYY-MM-DDTHH:mm" from the input
+  const date = new Date(datetimeLocal);
+  const offsetMinutes = date.getTimezoneOffset(); // e.g. 300 for EST
+  const sign = offsetMinutes <= 0 ? "+" : "-";
+  const absOffset = Math.abs(offsetMinutes);
+  const hours = String(Math.floor(absOffset / 60)).padStart(2, "0");
+  const mins = String(absOffset % 60).padStart(2, "0");
+  // Format: "YYYY-MM-DD HH:mm:00+HH:mm" so backend knows it's local time
+  return `${datetimeLocal.replace("T", " ")}:00${sign}${hours}:${mins}`;
+}
+
 export default function AddPractice({ setSessions }: PracticeProps) {
   const [form, setForm] = useState(false);
   const [title, setTitle] = useState("");
@@ -23,8 +35,7 @@ export default function AddPractice({ setSessions }: PracticeProps) {
     e.preventDefault();
 
     try {
-      // ✅ Convert datetime-local → SQL format
-      const formattedDate = date.replace("T", " ") + ":00";
+      const formattedDate = toLocalISOWithOffset(date);
 
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/practice-sessions`,
@@ -48,7 +59,7 @@ export default function AddPractice({ setSessions }: PracticeProps) {
         id: data.data.id,
         title,
         location,
-        date: formattedDate, // ✅ keep consistent with backend format
+        date: formattedDate,
         notes,
       };
 
@@ -119,7 +130,7 @@ export default function AddPractice({ setSessions }: PracticeProps) {
                 <Field>
                   <FieldLabel>Date & Time</FieldLabel>
                   <Input
-                    type="datetime-local" // ✅ updated
+                    type="datetime-local"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
                     required
