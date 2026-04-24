@@ -27,3 +27,7 @@ dist/
 # IDE / editor
 .vscode/
 .idea/
+
+#practice files
+lully_file.py
+starting_account.py
