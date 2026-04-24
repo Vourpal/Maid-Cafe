@@ -25,29 +25,34 @@ function LoginForm() {
     setRememberMe((prev) => !prev);
   }
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
+async function handleLogin(e: React.FormEvent) {
+  e.preventDefault();
+  setError("");
 
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-        method: "POST",
-        // credentials: "include", this is for cookies
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, remember_me: rememberMe }),
-      });
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, remember_me: rememberMe }),
+    });
 
-      if (!res.ok) throw new Error("Invalid login");
+    if (!res.ok) throw new Error("Invalid login");
 
-      const json = await res.json();
-      localStorage.setItem("token", json.data.token)
-      setUser(json.data);
+    const json = await res.json();
+    localStorage.setItem("token", json.data.token);
 
-      router.push(redirectTo);
-    } catch (err) {
-      setError("Invalid email or password");
-    }
+    // Fetch full user data from /me
+    const meRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+      headers: { Authorization: `Bearer ${json.data.token}` },
+    });
+    const meJson = await meRes.json();
+    setUser(meJson.data);
+
+    router.push(redirectTo);
+  } catch (err) {
+    setError("Invalid email or password");
   }
+}
 
   async function handleLogout() {
     await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {

@@ -1,6 +1,6 @@
 from typing import Optional
 from zoneinfo import ZoneInfo
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 
 class InviteCreate(BaseModel):
@@ -44,13 +44,13 @@ class UserRegister(BaseModel):
 
 
 class UserUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     first_name: str | None = None
     last_name: str | None = None
     email: str | None = None
     username: str | None = None
     password: str | None = None
-
-    # ✅ NEW FIELDS
     type: str | None = None
     availability: dict | None = None
 
