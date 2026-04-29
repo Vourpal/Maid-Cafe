@@ -5,6 +5,8 @@ import { authHeadersNoContent } from "@/lib/api";
 import { useUserAuthentication } from "../UserAuthentication";
 import LinkModal from "./LinkModal";
 
+export const dynamic = "force-dynamic";
+
 type Link = {
   id: number;
   link_url: string;
