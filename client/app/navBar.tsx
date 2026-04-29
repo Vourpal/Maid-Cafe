@@ -6,8 +6,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
+  NavigationMenuContent,
   NavigationMenuItem,
+  NavigationMenuLink,
   NavigationMenuList,
+  NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
 import { authHeadersNoContent } from "@/lib/api";
 
@@ -46,6 +49,25 @@ export default function NavBar() {
         {/* RIGHT — Nav links */}
         <NavigationMenu className="w-full sm:w-auto">
           <NavigationMenuList className="flex flex-wrap sm:flex-nowrap gap-2 sm:gap-2 items-center justify-start sm:justify-end">
+            {user && (
+              <NavigationMenuItem>
+                <NavigationMenuTrigger>Links</NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="w-96">
+                    <ListItem href="/links?category=excel" title="Excel Sheets">
+                      Important excel files available for download.
+                    </ListItem>
+                    <ListItem href="/links?category=powerpoint" title="Power Points">
+                      Important Power Point files available for download
+                    </ListItem>
+                    <ListItem href="/links?category=misc" title="Miscalleneous">
+                      Everything Else
+                    </ListItem>
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+            )}
+
             {user && user.admin && (
               <NavigationMenuItem>
                 <Link href="/admin">
@@ -121,5 +143,25 @@ export default function NavBar() {
         </NavigationMenu>
       </div>
     </nav>
+  );
+}
+
+function ListItem({
+  title,
+  children,
+  href,
+  ...props
+}: React.ComponentPropsWithoutRef<"li"> & { href: string }) {
+  return (
+    <li {...props}>
+      <NavigationMenuLink asChild>
+        <Link href={href}>
+          <div className="flex flex-col gap-1 text-sm">
+            <div className="leading-none font-medium">{title}</div>
+            <div className="line-clamp-2 text-muted-foreground">{children}</div>
+          </div>
+        </Link>
+      </NavigationMenuLink>
+    </li>
   );
 }
