@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { authHeadersNoContent } from "@/lib/api";
 import { useUserAuthentication } from "../UserAuthentication";
@@ -135,7 +135,8 @@ function Gate({
   );
 }
 
-export default function Links() {
+// ── Inner component that uses useSearchParams ──────────────────────────────────
+function LinksInner() {
   const { user, loading: authLoading } = useUserAuthentication();
   const searchParams = useSearchParams();
   const category = searchParams.get("category") ?? "";
@@ -143,7 +144,6 @@ export default function Links() {
   const [links, setLinks] = useState<Link[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 🔥 modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<Link | null>(null);
 
@@ -177,8 +177,6 @@ export default function Links() {
   const categoryLabel = category
     ? category.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
     : "Resources";
-
-  const isLoading = authLoading || loading;
 
   return (
     <div className="min-h-screen bg-white text-black px-4 py-12 font-mono">
@@ -261,7 +259,6 @@ export default function Links() {
         </div>
       </div>
 
-      {/* 🔥 MODAL */}
       <LinkModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -270,5 +267,31 @@ export default function Links() {
         onSuccess={loadLinks}
       />
     </div>
+  );
+}
+
+// ── Default export wraps inner component in Suspense ──────────────────────────
+export default function Links() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-white px-4 py-12 font-mono">
+          <div className="mx-auto max-w-2xl">
+            <div className="rounded-xl border border-gray-200 overflow-hidden">
+              <div className="flex items-center gap-4 px-5 py-3.5 border-b border-gray-200">
+                <div className="w-6 h-2.5 rounded bg-gray-200 animate-pulse" />
+                <div className="flex-1 h-2.5 rounded bg-gray-200 animate-pulse" />
+              </div>
+              <div className="flex items-center gap-4 px-5 py-3.5 border-b border-gray-200">
+                <div className="w-6 h-2.5 rounded bg-gray-200 animate-pulse" />
+                <div className="flex-1 h-2.5 rounded bg-gray-200 animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <LinksInner />
+    </Suspense>
   );
 }
