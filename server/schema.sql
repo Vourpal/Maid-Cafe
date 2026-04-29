@@ -106,7 +106,7 @@ CREATE TABLE IF NOT EXISTS practice_session_routines (
     UNIQUE (practice_session_id, routine_id)
 );
 
-CREATE TABLE invite_codes (
+CREATE TABLE  IF NOT EXISTS invite_codes (
   id SERIAL PRIMARY KEY,
   code TEXT UNIQUE NOT NULL,
   created_by INTEGER REFERENCES users(id),
@@ -118,3 +118,12 @@ CREATE TABLE invite_codes (
 
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS links(
+    id SERIAL PRIMARY KEY,
+    category TEXT NOT NULL,
+    link_url TEXT NOT NULL,
+    UNIQUE(category, link_url)
+);
+
+CREATE INDEX idx_links_category ON links(category);

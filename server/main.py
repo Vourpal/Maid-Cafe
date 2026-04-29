@@ -9,6 +9,7 @@ from routes.event_routes import event_bp
 from routes.attendance_routes import attendance_bp
 from routes.practice_routes import practice_bp
 from routes.invite_routes import invite_bp
+from routes.link_routes import link_bp
 
 print("PORT:", os.getenv("PORT"))
 
@@ -26,6 +27,7 @@ app.register_blueprint(event_bp)
 app.register_blueprint(attendance_bp)
 app.register_blueprint(practice_bp)
 app.register_blueprint(invite_bp)
+app.register_blueprint(link_bp)
 
 
 # Error handlers
