@@ -8,16 +8,25 @@ import { authHeaders } from "@/lib/api";
 
 const days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface TimeSlot {
+  start: string;
+  end: string;
+}
+
+interface DayAvailability {
+  enabled: boolean;
+  slots: TimeSlot[];
+}
+
 interface StaffMember {
   id: number;
   first_name: string;
   last_name: string;
   type: string | null;
   username: string;
-  availability: Record<
-    string,
-    { enabled: boolean; start?: string; end?: string }
-  >;
+  availability: Record<string, any>;
 }
 
 interface Invite {
@@ -28,6 +37,35 @@ interface Invite {
   uses: number;
   expires_at: string | null;
 }
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Normalise a raw DB day entry into the multi-slot shape. */
+function normaliseDay(raw: any): DayAvailability {
+  if (!raw) return { enabled: false, slots: [] };
+
+  if (Array.isArray(raw.slots)) {
+    return { enabled: raw.enabled ?? false, slots: raw.slots };
+  }
+
+  // Legacy single-slot shape from DB
+  const slot: TimeSlot = { start: raw.start ?? "", end: raw.end ?? "" };
+  return {
+    enabled: raw.enabled ?? false,
+    slots: raw.enabled ? [slot] : [],
+  };
+}
+
+/** Convert a "HH:MM" 24h string to "h:MMam/pm" */
+function to12h(time: string): string {
+  if (!time) return "--";
+  const [h, m] = time.split(":").map(Number);
+  const period = h < 12 ? "am" : "pm";
+  const hour = h % 12 === 0 ? 12 : h % 12;
+  return `${hour}:${String(m).padStart(2, "0")}${period}`;
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function Admin() {
   const { user, loading } = useUserAuthentication();
@@ -44,7 +82,6 @@ export default function Admin() {
   const [invitesLoading, setInvitesLoading] = useState(true);
 
   useEffect(() => {
-    // Only fetch if user is confirmed to be an admin
     if (!user || !user.admin) {
       setStaffLoading(false);
       return;
@@ -59,8 +96,6 @@ export default function Admin() {
         if (!res.ok) return;
 
         const json = await res.json();
-        console.log(json, "fetch data");
-        // success_response wraps results under { data: [...] }
         const users: StaffMember[] = Array.isArray(json) ? json : json.data;
         setStaff(users);
       } catch (err) {
@@ -103,32 +138,20 @@ export default function Admin() {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/invites`, {
         method: "POST",
-        headers: {
-          ...authHeaders(),
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          max_uses: maxUses,
-          expires_at: expiresAt || null,
-        }),
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ max_uses: maxUses, expires_at: expiresAt || null }),
       });
 
       const json = await res.json();
 
       if (!res.ok) {
-        console.error(json);
         toast.error("Failed to generate invite code");
         return;
       }
 
       const invite = json.data;
-
       setGeneratedCode(invite.code);
-
-      // ✅ AUTO COPY
       await navigator.clipboard.writeText(invite.code);
-
-      // ✅ TOAST
       toast.success("Invite code copied to clipboard!");
     } catch (err) {
       console.error(err);
@@ -142,16 +165,12 @@ export default function Admin() {
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/invites/${id}`,
-        {
-          method: "DELETE",
-          headers: authHeaders(),
-        },
+        { method: "DELETE", headers: authHeaders() }
       );
 
       if (!res.ok) throw new Error();
 
       toast.success("Invite revoked");
-
       setInvites((prev) => prev.filter((i) => i.id !== id));
     } catch {
       toast.error("Failed to revoke invite");
@@ -163,7 +182,7 @@ export default function Admin() {
     toast.success("Copied to clipboard!");
   }
 
-  // ── Auth loading ──────────────────────────────────────────
+  // ── Auth guards ───────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-10 space-y-4">
@@ -174,7 +193,6 @@ export default function Admin() {
     );
   }
 
-  // ── Not logged in or not admin ────────────────────────────
   if (!user || !user.admin) {
     return (
       <div className="max-w-lg mx-auto px-4 py-10 text-center text-gray-500">
@@ -183,34 +201,27 @@ export default function Admin() {
     );
   }
 
-  // ── Render ────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="max-w-4xl mx-auto px-4 py-10 space-y-6">
-      {/* HEADER CARD */}
+
+      {/* HEADER */}
       <Card className="border-rose-200 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-rose-500 text-2xl">
-            🛡️ Admin Panel
-          </CardTitle>
+          <CardTitle className="text-rose-500 text-2xl">🛡️ Admin Panel</CardTitle>
         </CardHeader>
       </Card>
 
-      {/* INVITE CARD */}
+      {/* INVITE GENERATOR */}
       <Card className="border-rose-200 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-rose-500 text-2xl">
-            🎟️ Invite Codes
-          </CardTitle>
+          <CardTitle className="text-rose-500 text-2xl">🎟️ Invite Codes</CardTitle>
         </CardHeader>
 
         <CardContent className="space-y-4">
-          {/* Inputs */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Max Uses */}
             <div>
-              <label className="text-xs text-gray-400 uppercase">
-                Max Uses
-              </label>
+              <label className="text-xs text-gray-400 uppercase">Max Uses</label>
               <input
                 type="number"
                 min={1}
@@ -220,11 +231,8 @@ export default function Admin() {
               />
             </div>
 
-            {/* Expiration */}
             <div>
-              <label className="text-xs text-gray-400 uppercase">
-                Expiration (optional)
-              </label>
+              <label className="text-xs text-gray-400 uppercase">Expiration (optional)</label>
               <input
                 type="datetime-local"
                 value={expiresAt}
@@ -234,7 +242,6 @@ export default function Admin() {
             </div>
           </div>
 
-          {/* Generate Button */}
           <button
             onClick={handleGenerateInvite}
             disabled={inviteLoading}
@@ -243,15 +250,10 @@ export default function Admin() {
             {inviteLoading ? "Generating..." : "Generate Invite Code"}
           </button>
 
-          {/* Result */}
           {generatedCode && (
             <div className="bg-rose-50 border border-rose-200 rounded-md p-3 text-center space-y-2">
               <p className="text-xs text-gray-400 uppercase">Generated Code</p>
-
-              <p className="text-lg font-semibold text-rose-600 tracking-widest">
-                {generatedCode}
-              </p>
-
+              <p className="text-lg font-semibold text-rose-600 tracking-widest">{generatedCode}</p>
               <button
                 onClick={() => handleCopy(generatedCode)}
                 className="text-xs bg-white border border-rose-200 px-3 py-1 rounded-md hover:bg-rose-100 transition"
@@ -263,12 +265,10 @@ export default function Admin() {
         </CardContent>
       </Card>
 
-      {/* INVITES LIST */}
+      {/* ACTIVE INVITES */}
       <Card className="border-rose-200 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-rose-500 text-2xl">
-            📋 Active Invite Codes
-          </CardTitle>
+          <CardTitle className="text-rose-500 text-2xl">📋 Active Invite Codes</CardTitle>
         </CardHeader>
 
         <CardContent>
@@ -283,9 +283,7 @@ export default function Admin() {
           ) : (
             <div className="space-y-3">
               {invites.map((invite) => {
-                const isExpired =
-                  invite.expires_at && new Date(invite.expires_at) < new Date();
-
+                const isExpired = invite.expires_at && new Date(invite.expires_at) < new Date();
                 const isUsedUp = invite.uses >= invite.max_uses;
 
                 return (
@@ -293,34 +291,22 @@ export default function Admin() {
                     key={invite.id}
                     className="border border-rose-100 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
                   >
-                    {/* Left side */}
                     <div className="space-y-1">
                       <p className="font-mono text-rose-600 font-semibold tracking-widest">
                         {invite.code}
                       </p>
-
                       <p className="text-xs text-gray-400">
                         {invite.uses} / {invite.max_uses} uses
                         {invite.expires_at && (
-                          <>
-                            {" · "}
-                            Expires{" "}
-                            {new Date(invite.expires_at).toLocaleDateString()}
-                          </>
+                          <> · Expires {new Date(invite.expires_at).toLocaleDateString()}</>
                         )}
                       </p>
-
                       <div className="flex gap-2 text-xs">
-                        {isExpired && (
-                          <span className="text-red-500">Expired</span>
-                        )}
-                        {isUsedUp && (
-                          <span className="text-gray-500">Used up</span>
-                        )}
+                        {isExpired && <span className="text-red-500">Expired</span>}
+                        {isUsedUp && <span className="text-gray-500">Used up</span>}
                       </div>
                     </div>
 
-                    {/* Actions */}
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleCopy(invite.code)}
@@ -328,7 +314,6 @@ export default function Admin() {
                       >
                         Copy
                       </button>
-
                       <button
                         onClick={() => handleRevoke(invite.id)}
                         className="text-xs bg-red-50 border border-red-200 px-3 py-1 rounded-md hover:bg-red-100 transition"
@@ -344,12 +329,10 @@ export default function Admin() {
         </CardContent>
       </Card>
 
-      {/* STAFF CARD */}
+      {/* STAFF */}
       <Card className="border-rose-200 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-rose-500 text-2xl">
-            👥 Staff Members
-          </CardTitle>
+          <CardTitle className="text-rose-500 text-2xl">👥 Staff Members</CardTitle>
         </CardHeader>
 
         <CardContent>
@@ -368,7 +351,7 @@ export default function Admin() {
                   key={member.id}
                   className="border border-rose-100 rounded-lg p-4 space-y-3"
                 >
-                  {/* Name + Type */}
+                  {/* Name + Role badge */}
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-gray-800 font-semibold text-lg">
@@ -393,33 +376,37 @@ export default function Admin() {
                     </span>
                   </div>
 
-                  {/* Availability */}
+                  {/* Availability — multi-slot aware */}
                   <div>
                     <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">
                       Availability
                     </p>
+
                     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-1">
                       {days.map((day) => {
-                        const d = member.availability?.[day];
-                        const enabled = d?.enabled;
+                        const d = normaliseDay(member.availability?.[day]);
+                        const enabled = d.enabled && d.slots.length > 0;
 
                         return (
                           <div
                             key={day}
                             className={`rounded-md px-2 py-1.5 text-center text-xs
-                              ${
-                                enabled
-                                  ? "bg-rose-50 border border-rose-200 text-rose-700"
-                                  : "bg-gray-50 border border-gray-100 text-gray-400"
+                              ${enabled
+                                ? "bg-rose-50 border border-rose-200 text-rose-700"
+                                : "bg-gray-50 border border-gray-100 text-gray-400"
                               }`}
                           >
                             <p className="font-semibold uppercase">{day}</p>
                             {enabled ? (
-                              <p className="mt-0.5 leading-tight">
-                                {d?.start}
-                                <br />
-                                {d?.end}
-                              </p>
+                              <div className="mt-0.5 leading-tight space-y-1">
+                                {d.slots.map((slot, i) => (
+                                  <p key={i}>
+                                    {to12h(slot.start)}
+                                    <br />
+                                    {to12h(slot.end)}
+                                  </p>
+                                ))}
+                              </div>
                             ) : (
                               <p className="mt-0.5 text-gray-300">—</p>
                             )}
@@ -434,6 +421,7 @@ export default function Admin() {
           )}
         </CardContent>
       </Card>
+
     </div>
   );
 }
