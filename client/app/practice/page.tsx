@@ -91,6 +91,7 @@ export default function Practice() {
       <ViewPractice
         event={selectedEvent}
         onClose={() => setSelectedEvent(null)}
+        setSessions={setSessions}
       />
 
       {user && user.admin && <AddPractice setSessions={setSessions} />}

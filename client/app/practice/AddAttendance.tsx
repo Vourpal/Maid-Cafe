@@ -137,24 +137,22 @@ export default function AddAttendance({ practiceId, onDone }: Props) {
 
       const json: ApiResponse<Attendance[]> = await res.json();
 
-      // The POST response only guarantees { id, user_id } per record —
-      // it won't include first_name/last_name etc. for display.
-      // Build the full shape locally from availableUsers, which already
-      // has all the display fields. Same pattern as AddRoutine's normalize.
-      const returnedRecords = Array.isArray(json.data) ? json.data : [];
-      const recordMap = new Map(returnedRecords.map((r) => [r.user_id, r.id]));
+      // ======================
+      // FIX: backend is source of truth
+      // ======================
+      const returnedRecords = Array.isArray(json.data)
+        ? json.data
+        : [];
 
-      const newAttendees: Attendance[] = availableUsers
-        .filter((u) => selected.has(u.id) && recordMap.has(u.id))
-        .map((u) => ({
-          id: recordMap.get(u.id)!,
-          user_id: u.id,
-          first_name: u.first_name,
-          last_name: u.last_name,
-          attended: false,
-          late: false,
-          notes: "",
-        }));
+      const newAttendees: Attendance[] = returnedRecords.map((r) => ({
+        id: r.id,
+        user_id: r.user_id,
+        first_name: r.first_name,
+        last_name: r.last_name,
+        attended: r.attended,
+        late: r.late,
+        notes: r.notes,
+      }));
 
       onDone(newAttendees);
       setOpen(false);

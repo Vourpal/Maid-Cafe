@@ -9,6 +9,8 @@ import EditRoutine from "./EditRoutine";
 import { authHeaders } from "@/lib/api";
 import { Attendance } from "@/types/event";
 import { useUserAuthentication } from "../UserAuthentication";
+import DeletePractice from "./DeletePractice";
+import EditPractice from "./EditPractice";
 
 type Routine = {
   id: number;
@@ -24,9 +26,10 @@ type Props = {
     resource: PracticeSessions;
   } | null;
   onClose: () => void;
+  setSessions: React.Dispatch<React.SetStateAction<PracticeSessions[]>>;
 };
 
-export default function ViewPractice({ event, onClose }: Props) {
+export default function ViewPractice({ event, onClose, setSessions }: Props) {
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [loading, setLoading] = useState(false);
@@ -133,6 +136,17 @@ export default function ViewPractice({ event, onClose }: Props) {
             <h2 className="text-rose-500 font-semibold text-lg">
               🎀 {s.title}
             </h2>
+            {user?.admin && (
+              <div className="flex gap-2 mb-4">
+                <EditPractice session={s} setSessions={setSessions} />
+
+                <DeletePractice
+                  session={s}
+                  setSessions={setSessions}
+                  onDeleted={onClose}
+                />
+              </div>
+            )}
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600"

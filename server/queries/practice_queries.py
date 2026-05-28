@@ -27,13 +27,14 @@ def post_practice_sessions(db, session: PracticeSession):
     )
     return db.fetchone()[0]
 
+
 def delete_practice_sessions(db, practice_id: int):
     db.execute(
         """
         DELETE FROM practice_sessions
         where id = %s
         RETURNING id""",
-        (practice_id,)
+        (practice_id,),
     )
     row = db.fetchone()
     return row[0] if row else None
@@ -45,10 +46,12 @@ def add_practice_attendance(db, practice_id: int, attendees: list[int]):
             """
             INSERT INTO practices (user_id, practice_session_id, attended)
             VALUES (%s, %s, TRUE)
-            ON CONFLICT (user_id, practice_session_id) DO NOTHING;
+            ON CONFLICT (user_id, practice_session_id)
+            DO UPDATE SET attended = TRUE;
             """,
             (user_id, practice_id),
         )
+
 
 def get_practice_attendance(db, practice_id: int):
     db.execute(
@@ -83,6 +86,57 @@ def get_practice_attendance(db, practice_id: int):
         for row in rows
     ]
 
+
+def get_all_routines(db):
+    db.execute(
+        """
+        SELECT id, name, notes
+        FROM routines
+        ORDER BY name;
+        """
+    )
+
+    rows = db.fetchall()
+
+    return [
+        {
+            "id": row[0],
+            "name": row[1],
+            "notes": row[2],
+        }
+        for row in rows
+    ]
+
+
+def update_practice_session(
+    db,
+    practice_id: int,
+    session: PracticeSession,
+):
+    db.execute(
+        """
+        UPDATE practice_sessions
+        SET title = %s,
+            location = %s,
+            date = %s,
+            notes = %s
+        WHERE id = %s
+        RETURNING id;
+        """,
+        (
+            session.title,
+            session.location,
+            session.date_utc,
+            session.notes,
+            practice_id,
+        ),
+    )
+
+    row = db.fetchone()
+
+    return row[0] if row else None
+
+
 def update_practice_attendance(db, updates: list):
     for record in updates:
         db.execute(
@@ -101,11 +155,14 @@ def update_practice_attendance(db, updates: list):
             ),
         )
 
+
 def create_routine(db, name: str, notes: str | None):
     db.execute(
         """
         INSERT INTO routines (name, notes)
         VALUES (%s, %s)
+        ON CONFLICT (name)
+        DO UPDATE SET name = EXCLUDED.name
         RETURNING id;
         """,
         (name, notes),
@@ -123,6 +180,7 @@ def add_routine_to_practice(db, practice_id: int, routine_id: int):
         (practice_id, routine_id),
     )
 
+
 def get_routines_by_practice(db, practice_id: int):
     db.execute(
         """
@@ -137,10 +195,8 @@ def get_routines_by_practice(db, practice_id: int):
 
     rows = db.fetchall()
 
-    return [
-        {"id": row[0], "name": row[1], "notes": row[2]}
-        for row in rows
-    ]
+    return [{"id": row[0], "name": row[1], "notes": row[2]} for row in rows]
+
 
 def update_routine(db, routine_id: int, name: str, notes: str | None):
     db.execute(
@@ -157,6 +213,7 @@ def update_routine(db, routine_id: int, name: str, notes: str | None):
     row = db.fetchone()
     return row[0] if row else None
 
+
 def remove_routine_from_practice(db, practice_id: int, routine_id: int):
     db.execute(
         """
@@ -170,6 +227,7 @@ def remove_routine_from_practice(db, practice_id: int, routine_id: int):
 
     row = db.fetchone()
     return row[0] if row else None
+
 
 def update_routines_bulk(db, routines: list[dict]):
     updated = []
@@ -192,10 +250,12 @@ def update_routines_bulk(db, routines: list[dict]):
 
         row = db.fetchone()
         if row:
-            updated.append({
-                "id": row[0],
-                "name": row[1],
-                "notes": row[2],
-            })
+            updated.append(
+                {
+                    "id": row[0],
+                    "name": row[1],
+                    "notes": row[2],
+                }
+            )
 
     return updated
