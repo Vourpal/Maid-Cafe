@@ -1,5 +1,5 @@
 "use client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useUserAuthentication } from "../UserAuthentication";
 import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
@@ -47,15 +47,34 @@ export default function EventFilters({
 }: EventFiltersProps) {
   const { user } = useUserAuthentication();
   const router = useRouter();
-
+  const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Helper: build a new URL preserving existing params, then navigate
+  function navigate(overrides: Record<string, string>) {
+    const params = new URLSearchParams(searchParams.toString());
+    // Always reset to page 1 when a filter changes
+    params.set("page", "1");
+    for (const [key, val] of Object.entries(overrides)) {
+      params.set(key, val);
+    }
+    router.push(`/events?${params.toString()}`);
+  }
+
+  // Debounced search — also resets to page 1 via navigate()
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.push(`/events?search_term=${searchTerm}`);
+      navigate({ search_term: searchTerm });
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchTerm, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm]);
+
+  function handleFutureToggle() {
+    const next = !showFutureOnly;
+    setShowFutureOnly(next);
+    navigate({ future_only: String(next) });
+  }
 
   return (
     <div className="flex flex-wrap gap-4 items-center mt-4">
@@ -70,14 +89,14 @@ export default function EventFilters({
         />
       </div>
 
-      {/* Future only toggle — always visible */}
+      {/* Upcoming only — navigates server-side */}
       <Toggle
         checked={showFutureOnly}
-        onToggle={() => setShowFutureOnly((p) => !p)}
+        onToggle={handleFutureToggle}
         label="Upcoming only"
       />
 
-      {/* My events toggle — logged-in users only */}
+      {/* My events — client-side filter, no pagination impact */}
       {user && (
         <Toggle
           checked={showMine}

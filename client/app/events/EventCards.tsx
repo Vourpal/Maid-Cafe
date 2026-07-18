@@ -15,6 +15,7 @@ import { MapPin, Users, CalendarDays } from "lucide-react";
 type EventCardProps = {
   initialEvents: Event[];
   initialPage: number;
+  initialFutureOnly: boolean;
 };
 
 type AttendanceRecord = {
@@ -67,20 +68,18 @@ function DateBadge({ dateStr }: { dateStr: string }) {
 export default function EventCards({
   initialEvents,
   initialPage,
+  initialFutureOnly,
 }: EventCardProps) {
   const [attendances, setAttendances] = useState<AttendanceRecord[]>([]);
   const [showMine, setShowMine] = useState(false);
-  const [showFutureOnly, setShowFutureOnly] = useState(true);
+  const [showFutureOnly, setShowFutureOnly] = useState(initialFutureOnly);
   const { user, loading } = useUserAuthentication();
 
-  const now = new Date();
-  now.setHours(0, 0, 0, 0); // compare against start of today
-
-  const displayedEvents = initialEvents.filter((e) => {
-    if (showFutureOnly && new Date(e.end_datetime) < now) return false;
-    if (showMine && !attendances.some((a) => a.event_id === e.id)) return false;
-    return true;
-  });
+  // showMine is still client-side (it only hides events the user isn't attending,
+  // no effect on pagination count so it's fine to filter locally)
+  const displayedEvents = showMine
+    ? initialEvents.filter((e) => attendances.some((a) => a.event_id === e.id))
+    : initialEvents;
 
   useEffect(() => {
     if (!user) return;

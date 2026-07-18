@@ -168,26 +168,25 @@ export default function ViewPractice({ event, onClose, setSessions }: Props) {
                         </span>
                       )}
                     </h3>
+                    {user?.admin && (
+                      <div className="flex gap-1.5">
+                        <AddAttendance
+                          practiceId={s.id}
+                          onDone={(newAttendees) => {
+                            setAttendance((prev) => [
+                              ...prev,
+                              ...(Array.isArray(newAttendees) ? newAttendees : []),
+                            ]);
+                          }}
+                        />
+                        <EditAttendance
+                          practiceId={s.id}
+                          attendance={attendance}
+                          onDone={(updated) => setAttendance(updated)}
+                        />
+                      </div>
+                    )}
                   </div>
-
-                  {user?.admin && (
-                    <div className="px-4 py-3 border-b border-rose-50 flex gap-2">
-                      <AddAttendance
-                        practiceId={s.id}
-                        onDone={(newAttendees) => {
-                          setAttendance((prev) => [
-                            ...prev,
-                            ...(Array.isArray(newAttendees) ? newAttendees : []),
-                          ]);
-                        }}
-                      />
-                      <EditAttendance
-                        practiceId={s.id}
-                        attendance={attendance}
-                        onDone={(updated) => setAttendance(updated)}
-                      />
-                    </div>
-                  )}
 
                   <div className="p-4 space-y-2 max-h-72 overflow-y-auto">
                     {attendance.length === 0 ? (
@@ -225,7 +224,7 @@ export default function ViewPractice({ event, onClose, setSessions }: Props) {
 
                 {/* ROUTINES */}
                 <div className="border border-rose-100 rounded-xl overflow-hidden">
-                  <div className="px-4 py-3 bg-rose-50 border-b border-rose-100">
+                  <div className="px-4 py-3 bg-rose-50 border-b border-rose-100 flex items-center justify-between">
                     <h3 className="text-sm font-semibold text-rose-700">
                       🎯 Routines
                       {routines.length > 0 && (
@@ -234,21 +233,20 @@ export default function ViewPractice({ event, onClose, setSessions }: Props) {
                         </span>
                       )}
                     </h3>
+                    {user?.admin && (
+                      <div className="flex gap-1.5">
+                        <AddRoutine
+                          practiceId={s.id}
+                          setRoutines={(updateFn) => setRoutines(updateFn)}
+                        />
+                        <EditRoutine
+                          practiceId={s.id}
+                          routines={routines}
+                          onDone={(updated) => setRoutines(updated)}
+                        />
+                      </div>
+                    )}
                   </div>
-
-                  {user?.admin && (
-                    <div className="px-4 py-3 border-b border-rose-50 flex gap-2">
-                      <AddRoutine
-                        practiceId={s.id}
-                        setRoutines={(updateFn) => setRoutines(updateFn)}
-                      />
-                      <EditRoutine
-                        practiceId={s.id}
-                        routines={routines}
-                        onDone={(updated) => setRoutines(updated)}
-                      />
-                    </div>
-                  )}
 
                   <div className="p-4 space-y-2 max-h-72 overflow-y-auto">
                     {routines.length === 0 ? (

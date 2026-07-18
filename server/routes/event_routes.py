@@ -25,9 +25,10 @@ def get_events():
         offset = (page - 1) * quantity
         min_capacity = request.args.get("min_capacity")
         search = request.args.get("search_term")
+        future_only = request.args.get("future_only", "false").lower() == "true"
 
-        events = get_events_paginated(cur, quantity, offset, min_capacity, search)
-        total = get_total_events(cur, search)
+        events = get_events_paginated(cur, quantity, offset, min_capacity, search, future_only)
+        total = get_total_events(cur, search, future_only)
 
         return success_response(
             {

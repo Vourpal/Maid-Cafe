@@ -133,9 +133,11 @@ export default function AddRoutine({ practiceId, setRoutines }: Props) {
     <>
       <Button
         onClick={() => setOpen(true)}
-        className="bg-rose-500 hover:bg-rose-600 text-white w-full"
+        size="sm"
+        variant="outline"
+        className="border-rose-300 text-rose-600 hover:bg-rose-50 h-7 text-xs rounded-full"
       >
-        Add Routine
+        Add
       </Button>
 
       {open && (

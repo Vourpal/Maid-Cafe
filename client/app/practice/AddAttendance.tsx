@@ -169,9 +169,11 @@ export default function AddAttendance({ practiceId, onDone }: Props) {
     <div>
       <Button
         onClick={handleOpen}
-        className="bg-rose-500 hover:bg-rose-600 text-white w-full"
+        size="sm"
+        variant="outline"
+        className="border-rose-300 text-rose-600 hover:bg-rose-50 h-7 text-xs rounded-full"
       >
-        Add Attendance
+        Add
       </Button>
 
       {open && (

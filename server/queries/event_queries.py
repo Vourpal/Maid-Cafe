@@ -59,7 +59,7 @@ def get_event_by_id(db, event_id: int):
     )
 
 
-def get_events_paginated(db, limit, offset, min_capacity=None, search=None):
+def get_events_paginated(db, limit, offset, min_capacity=None, search=None, future_only=False):
     query = """
         SELECT id, title, description, start_date, end_date, created_by, location, max_attendees, status
         FROM events
@@ -76,7 +76,10 @@ def get_events_paginated(db, limit, offset, min_capacity=None, search=None):
         params.append(f"%{search}%")
         params.append(f"%{search}%")
 
-    query += " ORDER BY id LIMIT %s OFFSET %s"
+    if future_only:
+        query += " AND end_date >= CURRENT_DATE"
+
+    query += " ORDER BY end_date ASC LIMIT %s OFFSET %s"
     params.extend([limit, offset])
 
     db.execute(query, params)
@@ -100,18 +103,17 @@ def get_events_paginated(db, limit, offset, min_capacity=None, search=None):
     ]
 
 
-def get_total_events(db, search=None):
+def get_total_events(db, search=None, future_only=False):
     query = "SELECT COUNT(*) FROM events WHERE 1=1"
     params = []
-
-    # if min_capacity:
-    #     query += " AND max_attendees >= %s"
-    #     params.append(min_capacity)
 
     if search:
         query += " AND (title ILIKE %s OR description ILIKE %s)"
         params.append(f"%{search}%")
         params.append(f"%{search}%")
+
+    if future_only:
+        query += " AND end_date >= CURRENT_DATE"
 
     db.execute(query, params)
     return db.fetchone()[0]
