@@ -28,7 +28,7 @@ export default function Home() {
   // Fetch the single soonest upcoming event (public endpoint)
   useEffect(() => {
     const now = new Date().toISOString().split("T")[0];
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/events?page=1&quantity=5`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/events?page=1&quantity=9999`, {
       cache: "no-store",
     })
       .then((r) => r.json())
@@ -70,11 +70,11 @@ export default function Home() {
             <span>Maid Café Staff Portal</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold mb-3">
-            {user ? `Hey, ${user.first_name} 👋` : "🎀 Maid Café"}
+            {user ? `Hey, ${user.first_name}` : "🎀 Maid Café"}
           </h1>
           <p className="text-rose-100 text-base max-w-xl">
             {user
-              ? `Welcome back${user.type ? `, ${user.type}` : ""}. Here's what's coming up.`
+              ? `Welcome back${user.type ? `, ${user.type.charAt(0).toUpperCase() + user.type.slice(1)}` : ""}. Here's what's coming up.`
               : "Your cozy hub for events, practices, and staff coordination."}
           </p>
 

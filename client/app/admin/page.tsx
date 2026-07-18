@@ -277,33 +277,27 @@ export default function Admin() {
                         </span>
                       </div>
 
-                      {/* Availability grid */}
-                      <div className="mt-3 grid grid-cols-7 gap-1 max-w-md">
+                      {/* Availability */}
+                      <div className="mt-4 grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">
                         {days.map((day) => {
                           const d = normaliseDay(member.availability?.[day]);
                           const enabled = d.enabled && d.slots.length > 0;
                           return (
-                            <div
-                              key={day}
-                              className={`rounded-lg py-1.5 text-center text-[10px] ${
-                                enabled
-                                  ? "bg-rose-500 text-white"
-                                  : "bg-gray-50 border border-gray-100 text-gray-300"
-                              }`}
-                            >
-                              <p className="font-semibold uppercase leading-none">
-                                {day.slice(0, 2)}
-                              </p>
-                              {enabled && (
-                                <div className="mt-0.5 space-y-0.5">
-                                  {d.slots.map((slot, i) => (
-                                    <p key={i} className="leading-tight opacity-90">
-                                      {to12h(slot.start)}
-                                      <br />
-                                      {to12h(slot.end)}
-                                    </p>
+                            <div key={day} className={`rounded-xl border p-3 min-h-[120px] ${enabled?"bg-rose-50 border-rose-200":"bg-gray-50 border-gray-200"}`}>
+                              <p className={`text-sm font-bold uppercase mb-3 ${enabled?"text-rose-600":"text-gray-400"}`}>{day}</p>
+                              {enabled ? (
+                                <div className="space-y-2">
+                                  {d.slots.map((slot,i)=>(
+                                    <div key={i} className="rounded-lg bg-white border border-rose-100 px-2 py-1 shadow-sm">
+                                      <p className="text-xs text-gray-500">Start</p>
+                                      <p className="font-medium text-gray-800">{to12h(slot.start)}</p>
+                                      <p className="text-xs text-gray-500 mt-1">End</p>
+                                      <p className="font-medium text-gray-800">{to12h(slot.end)}</p>
+                                    </div>
                                   ))}
                                 </div>
+                              ):(
+                                <div className="flex items-center justify-center h-[70px]"><span className="text-sm text-gray-400">Unavailable</span></div>
                               )}
                             </div>
                           );
