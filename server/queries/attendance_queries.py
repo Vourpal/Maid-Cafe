@@ -50,27 +50,38 @@ def get_attendance_by_id(db, attendance_id: int):
 
 
 def get_carpool_snapshot(db, event_id: int):
-    """
-    Returns (total_driver_seats, passenger_count) for the event.
-    Locks all attendance rows for the event with FOR UPDATE so concurrent
-    requests are serialised — no two passengers can claim the last seat
-    at the same time.
-    """
+    # Lock every attendance row for this event
     db.execute(
         """
-        SELECT
-            COALESCE(SUM(CASE WHEN role = 'Driver' THEN COALESCE(seats_available, 0) ELSE 0 END), 0) AS total_seats,
-            COUNT(CASE WHEN role = 'Passenger' THEN 1 END) AS passengers
+        SELECT id
         FROM attendances
         WHERE event_id = %s
         FOR UPDATE;
         """,
         (event_id,),
     )
-    row = db.fetchone()
-    total_seats = int(row[0]) if row else 0
-    passengers  = int(row[1]) if row else 0
-    return total_seats, passengers
+
+    # Now safely calculate totals
+    db.execute(
+        """
+        SELECT
+            COALESCE(SUM(CASE
+                WHEN role = 'Driver'
+                THEN COALESCE(seats_available, 0)
+                ELSE 0
+            END), 0),
+            COUNT(CASE
+                WHEN role = 'Passenger'
+                THEN 1
+            END)
+        FROM attendances
+        WHERE event_id = %s;
+        """,
+        (event_id,),
+    )
+
+    total_seats, passengers = db.fetchone()
+    return int(total_seats), int(passengers)
 
 
 def post_attendance(db, user: NewAttendance):
