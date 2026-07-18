@@ -1,5 +1,6 @@
 "use client";
 
+// TODO: Make it so that when editing the practice session it updates without having to manually refresh. This will involve lifting the state up to the parent and passing down a setter function.
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
