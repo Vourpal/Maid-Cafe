@@ -49,6 +49,30 @@ def get_attendance_by_id(db, attendance_id: int):
     )
 
 
+def get_carpool_snapshot(db, event_id: int):
+    """
+    Returns (total_driver_seats, passenger_count) for the event.
+    Locks all attendance rows for the event with FOR UPDATE so concurrent
+    requests are serialised — no two passengers can claim the last seat
+    at the same time.
+    """
+    db.execute(
+        """
+        SELECT
+            COALESCE(SUM(CASE WHEN role = 'Driver' THEN COALESCE(seats_available, 0) ELSE 0 END), 0) AS total_seats,
+            COUNT(CASE WHEN role = 'Passenger' THEN 1 END) AS passengers
+        FROM attendances
+        WHERE event_id = %s
+        FOR UPDATE;
+        """,
+        (event_id,),
+    )
+    row = db.fetchone()
+    total_seats = int(row[0]) if row else 0
+    passengers  = int(row[1]) if row else 0
+    return total_seats, passengers
+
+
 def post_attendance(db, user: NewAttendance):
     db.execute(
         """
@@ -122,37 +146,3 @@ def insert_practice_attendance(db, practice_id: int, attendees: list[int]):
             """,
             (user_id, practice_id),
         )
-
-
-# TODO: Testing race conditions
-
-# with get_db() as (conn, cur):
-#     # Lock the event row so no one else can read it until we're done
-#     cur.execute("""
-#         SELECT remaining_seats
-#         FROM events
-#         WHERE id = %s
-#         FOR UPDATE
-#     """, (event_id,))
-
-#     row = cur.fetchone()
-#     if not row:
-#         raise APIError("EVENT_NOT_FOUND", ...)
-
-#     seats = row[0]
-
-#     if seats <= 0:
-#         raise APIError("FULL", "No seats left")
-
-#     # Decrement seat count
-#     cur.execute("""
-#         UPDATE events
-#         SET remaining_seats = remaining_seats - 1
-#         WHERE id = %s
-#     """, (event_id,))
-
-#     # Insert attendance
-#     cur.execute("""
-#         INSERT INTO attendances (...)
-#         RETURNING id
-#     """, (...))
