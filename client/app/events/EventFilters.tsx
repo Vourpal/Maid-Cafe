@@ -2,8 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useUserAuthentication } from "../UserAuthentication";
 import { useEffect, useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Search } from "lucide-react";
 
 type EventFiltersProps = {
   showMine: boolean;
@@ -19,12 +18,6 @@ export default function EventFilters({
 
   const [searchTerm, setSearchTerm] = useState("");
 
-  //TODO: Filter for location maybe future
-  function handleLocationChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const value = e.target.value;
-    router.push(`/events?location=${value}&page=1`);
-  }
-
   function handleMineToggle() {
     setShowMine((prev) => !prev);
   }
@@ -36,41 +29,37 @@ export default function EventFilters({
     return () => clearTimeout(timer);
   }, [searchTerm, router]);
 
-return (
-  <div className="flex flex-wrap gap-4 items-end mb-6">
-    {/* <Field>
-      <FieldLabel>Location</FieldLabel>
-      <select
-        onChange={handleLocationChange}
-        className="border border-rose-200 rounded-md px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-rose-300"
-      >
-        <option value="">All</option>
-        <option value="tampa">Tampa</option>
-        <option value="orlando">Orlando</option>
-      </select>
-    </Field> */}
-
-    <Field>
-      <FieldLabel>Search</FieldLabel>
-      <Input
-        type="text"
-        placeholder="Search events..."
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="border-rose-200 focus:ring-rose-300 w-48"
-      />
-    </Field>
-
-    {user && (
-      <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer pb-1">
+  return (
+    <div className="flex flex-wrap gap-3 items-center mt-4">
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
         <input
-          type="checkbox"
-          checked={showMine}
-          onChange={handleMineToggle}
-          className="accent-rose-500"
+          type="text"
+          placeholder="Search events..."
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-300 w-52 transition"
         />
-        Show my events
-      </label>
-    )}
-  </div>
-);
+      </div>
+
+      {/* My events toggle */}
+      {user && (
+        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+          <div
+            onClick={handleMineToggle}
+            className={`relative w-9 h-5 rounded-full transition-colors cursor-pointer ${
+              showMine ? "bg-rose-500" : "bg-gray-200"
+            }`}
+          >
+            <div
+              className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${
+                showMine ? "translate-x-4" : "translate-x-0"
+              }`}
+            />
+          </div>
+          My events
+        </label>
+      )}
+    </div>
+  );
 }

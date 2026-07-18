@@ -7,11 +7,10 @@ import AddEvent from "./AddEvent";
 import EditAttendance from "./EditAttendance";
 import EditEvents from "./EditEvent";
 import SignUpModal from "./SignUpModal";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { authHeadersNoContent } from "@/lib/api";
 import EventInfo from "./EventInfo";
+import { MapPin, Users, CalendarDays } from "lucide-react";
 
 type EventCardProps = {
   initialEvents: Event[];
@@ -23,24 +22,52 @@ type AttendanceRecord = {
   event_id: number;
 };
 
-function getStatusColor(status: string) {
+function getStatusBorderColor(status: string) {
   switch (status) {
     case "published":
-      return "default";
+      return "border-l-green-500";
     case "cancelled":
-      return "destructive";
+      return "border-l-red-500";
     case "draft":
-      return "secondary";
+      return "border-l-amber-400";
     default:
-      return "secondary";
+      return "border-l-gray-300";
   }
+}
+
+function getStatusBadgeClass(status: string) {
+  switch (status) {
+    case "published":
+      return "bg-green-50 text-green-700 border-green-200";
+    case "cancelled":
+      return "bg-red-50 text-red-700 border-red-200";
+    case "draft":
+      return "bg-amber-50 text-amber-700 border-amber-200";
+    default:
+      return "bg-gray-50 text-gray-600 border-gray-200";
+  }
+}
+
+function DateBadge({ dateStr }: { dateStr: string }) {
+  const d = new Date(dateStr);
+  const month = d.toLocaleString("en-US", { month: "short" }).toUpperCase();
+  const day = d.getDate();
+  return (
+    <div className="flex flex-col items-center justify-center bg-rose-50 border border-rose-100 rounded-xl w-14 h-14 shrink-0 text-center">
+      <span className="text-[10px] font-bold text-rose-400 tracking-widest leading-none">
+        {month}
+      </span>
+      <span className="text-2xl font-bold text-rose-600 leading-tight">
+        {day}
+      </span>
+    </div>
+  );
 }
 
 export default function EventCards({
   initialEvents,
   initialPage,
 }: EventCardProps) {
-  const [page, setPage] = useState(initialPage);
   const [attendances, setAttendances] = useState<AttendanceRecord[]>([]);
   const [showMine, setShowMine] = useState(false);
   const { user, loading } = useUserAuthentication();
@@ -52,7 +79,6 @@ export default function EventCards({
   useEffect(() => {
     if (!user) return;
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/attendances/me`, {
-      // credentials: "include",
       headers: authHeadersNoContent(),
     })
       .then((res) => res.json())
@@ -76,7 +102,6 @@ export default function EventCards({
       {
         method: "DELETE",
         headers: authHeadersNoContent(),
-        // credentials: "include",
       },
     );
 
@@ -86,14 +111,26 @@ export default function EventCards({
   if (loading) return null;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
-      <div className="flex items-center justify-between mb-6">
-        <EventFilters showMine={showMine} setShowMine={setShowMine} />
-        {user && user.admin && <AddEvent />}
+    <div className="px-4 py-6 max-w-4xl mx-auto">
+      {/* Page header */}
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Events</h1>
+          <p className="text-gray-500 text-sm mt-0.5">
+            Browse and sign up for upcoming café events
+          </p>
+        </div>
+        {user?.admin && <AddEvent />}
       </div>
 
+      {/* Filters */}
+      <div className="mb-6">
+        <EventFilters showMine={showMine} setShowMine={setShowMine} />
+      </div>
+
+      {/* Event list */}
       {displayedEvents.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="flex flex-col items-center justify-center py-24 text-center">
           <p className="text-5xl mb-4">🎀</p>
           <h2 className="text-xl font-semibold text-gray-700 mb-2">
             No events found
@@ -103,7 +140,7 @@ export default function EventCards({
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           {displayedEvents.map((event) => {
             const isAttending = attendances.some(
               (a) => a.event_id === event.id,
@@ -113,68 +150,103 @@ export default function EventCards({
             );
 
             return (
-              <Card key={event.id}>
-                <CardHeader className="flex flex-row items-start justify-between">
-                  <CardTitle>{event.title}</CardTitle>
-                  <Badge variant={getStatusColor(event.status)}>
-                    {event.status}
-                  </Badge>
-                </CardHeader>
+              <div
+                key={event.id}
+                className={`bg-white rounded-xl border border-l-4 border-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row gap-0 overflow-hidden ${getStatusBorderColor(event.status)}`}
+              >
+                {/* Main content */}
+                <div className="flex items-start gap-4 p-4 flex-1 min-w-0">
+                  <DateBadge dateStr={event.end_datetime} />
 
-                <CardContent className="flex flex-col gap-3">
-                  <div className="text-sm text-muted-foreground">
-                    {event.location && <span>📍 {event.location} · </span>}
-                    {event.max_attendees && (
-                      <span>👥 {event.max_attendees} spots · </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2 flex-wrap">
+                      <h2 className="text-base font-semibold text-gray-800 leading-tight">
+                        {event.title}
+                      </h2>
+                      <span
+                        className={`text-xs font-medium px-2 py-0.5 rounded-full border capitalize shrink-0 ${getStatusBadgeClass(event.status)}`}
+                      >
+                        {event.status}
+                      </span>
+                    </div>
+
+                    {event.description && (
+                      <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                        {event.description}
+                      </p>
                     )}
-                    <span>
-                      📅 {new Date(event.end_datetime).toLocaleDateString()}
-                    </span>
+
+                    <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-gray-400">
+                      {event.location && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          {event.location}
+                        </span>
+                      )}
+                      {event.max_attendees && (
+                        <span className="flex items-center gap-1">
+                          <Users className="w-3 h-3" />
+                          {event.max_attendees} spots
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1">
+                        <CalendarDays className="w-3 h-3" />
+                        {new Date(event.end_datetime).toLocaleDateString(
+                          "en-US",
+                          {
+                            weekday: "short",
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric",
+                          },
+                        )}
+                      </span>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {user &&
+                        (isAttending ? (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="h-7 text-xs rounded-full"
+                            onClick={() => handleLeave(event.id)}
+                          >
+                            Leave Event
+                          </Button>
+                        ) : (
+                          <SignUpModal
+                            eventId={event.id}
+                            onSuccess={(newAttendance) =>
+                              setAttendances([...attendances, newAttendance])
+                            }
+                          />
+                        ))}
+
+                      {user && isAttending && currentAttendance && (
+                        <EditAttendance attendanceId={currentAttendance.id} />
+                      )}
+
+                      {user?.admin && (
+                        <>
+                          <EditEvents
+                            eventIdProp={event.id}
+                            titleProp={event.title}
+                            descriptionProp={event.description}
+                            startDateProp={event.start_datetime}
+                            endDateProp={event.end_datetime}
+                            locationProp={event.location}
+                            maxAttendeesProp={event.max_attendees}
+                            statusProps={event.status}
+                          />
+                          <EventInfo eventIdProp={event.id} />
+                        </>
+                      )}
+                    </div>
                   </div>
-
-                  {event.description && (
-                    <p className="text-sm">{event.description}</p>
-                  )}
-
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {user &&
-                      (isAttending ? (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleLeave(event.id)}
-                        >
-                          Leave Event
-                        </Button>
-                      ) : (
-                        <SignUpModal
-                          eventId={event.id}
-                          onSuccess={(newAttendance) =>
-                            setAttendances([...attendances, newAttendance])
-                          }
-                        />
-                      ))}
-
-                    {user && isAttending && currentAttendance && (
-                      <EditAttendance attendanceId={currentAttendance.id} />
-                    )}
-
-                    {user && user.admin && (
-                      <EditEvents
-                        eventIdProp={event.id}
-                        titleProp={event.title}
-                        descriptionProp={event.description}
-                        startDateProp={event.start_datetime}
-                        endDateProp={event.end_datetime}
-                        locationProp={event.location}
-                        maxAttendeesProp={event.max_attendees}
-                        statusProps={event.status}
-                      />
-                    )}
-                    {user && user.admin && <EventInfo eventIdProp={event.id} />}
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             );
           })}
         </div>

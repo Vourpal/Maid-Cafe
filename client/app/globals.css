@@ -128,3 +128,293 @@
     @apply font-sans;
   }
 }
+
+/* ─── React Big Calendar — rose theme ───────────────────────────────────────── */
+
+.rbc-rose-theme .rbc-calendar {
+  font-family: inherit;
+}
+
+/* Toolbar */
+.rbc-rose-theme .rbc-toolbar {
+  margin-bottom: 12px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rbc-rose-theme .rbc-toolbar button {
+  color: #9f1239;
+  border: 1px solid #fecdd3;
+  border-radius: 8px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: white;
+  transition: background 0.15s, color 0.15s;
+  cursor: pointer;
+}
+
+.rbc-rose-theme .rbc-toolbar button:hover {
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.rbc-rose-theme .rbc-toolbar button.rbc-active {
+  background: #f43f5e;
+  color: white;
+  border-color: #f43f5e;
+}
+
+.rbc-rose-theme .rbc-toolbar button.rbc-active:hover {
+  background: #e11d48;
+}
+
+.rbc-rose-theme .rbc-toolbar-label {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #1f2937;
+}
+
+/* Header days */
+.rbc-rose-theme .rbc-header {
+  background: #fff1f2;
+  color: #9f1239;
+  font-weight: 600;
+  font-size: 0.75rem;
+  padding: 6px 4px;
+  border-color: #fecdd3;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Today cell */
+.rbc-rose-theme .rbc-today {
+  background-color: #fff1f2 !important;
+}
+
+/* Events */
+.rbc-rose-theme .rbc-event {
+  background-color: #f43f5e;
+  border-radius: 6px;
+  border: none;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.rbc-rose-theme .rbc-event:focus,
+.rbc-rose-theme .rbc-event.rbc-selected {
+  background-color: #be123c;
+  outline: none;
+}
+
+.rbc-rose-theme .rbc-event-label {
+  font-size: 0.7rem;
+}
+
+/* Current time line */
+.rbc-rose-theme .rbc-current-time-indicator {
+  background-color: #f43f5e;
+}
+
+/* Off-range dates */
+.rbc-rose-theme .rbc-off-range-bg {
+  background: #fafafa;
+}
+
+/* Month view date cells */
+.rbc-rose-theme .rbc-date-cell {
+  font-size: 0.8rem;
+  padding: 4px 6px;
+  color: #374151;
+}
+
+.rbc-rose-theme .rbc-date-cell.rbc-now {
+  font-weight: 700;
+  color: #f43f5e;
+}
+
+/* Grid lines */
+.rbc-rose-theme .rbc-month-view,
+.rbc-rose-theme .rbc-time-view,
+.rbc-rose-theme .rbc-agenda-view {
+  border-color: #fecdd3;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.rbc-rose-theme .rbc-month-row,
+.rbc-rose-theme .rbc-day-bg + .rbc-day-bg,
+.rbc-rose-theme .rbc-header + .rbc-header {
+  border-color: #fecdd3;
+}
+
+.rbc-rose-theme .rbc-timeslot-group,
+.rbc-rose-theme .rbc-time-header-content,
+.rbc-rose-theme .rbc-time-content {
+  border-color: #fecdd3;
+}
+
+/* Show more */
+.rbc-rose-theme .rbc-show-more {
+  color: #f43f5e;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+/* Agenda view */
+.rbc-rose-theme .rbc-agenda-table thead {
+  background: #fff1f2;
+  color: #9f1239;
+}
+
+.rbc-rose-theme .rbc-agenda-date-cell,
+.rbc-rose-theme .rbc-agenda-time-cell {
+  color: #9f1239;
+  font-weight: 600;
+}
+
+/* ─── React Big Calendar — rose theme ───────────────────────────────────────── */
+
+.rbc-rose-theme .rbc-calendar {
+  font-family: inherit;
+}
+
+/* Toolbar */
+.rbc-rose-theme .rbc-toolbar {
+  margin-bottom: 12px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rbc-rose-theme .rbc-toolbar button {
+  color: #9f1239;
+  border: 1px solid #fecdd3;
+  border-radius: 8px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: white;
+  transition: background 0.15s, color 0.15s;
+  cursor: pointer;
+}
+
+.rbc-rose-theme .rbc-toolbar button:hover {
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.rbc-rose-theme .rbc-toolbar button.rbc-active {
+  background: #f43f5e;
+  color: white;
+  border-color: #f43f5e;
+}
+
+.rbc-rose-theme .rbc-toolbar button.rbc-active:hover {
+  background: #e11d48;
+}
+
+.rbc-rose-theme .rbc-toolbar-label {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #1f2937;
+}
+
+/* Header days */
+.rbc-rose-theme .rbc-header {
+  background: #fff1f2;
+  color: #9f1239;
+  font-weight: 600;
+  font-size: 0.75rem;
+  padding: 6px 4px;
+  border-color: #fecdd3;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Today cell */
+.rbc-rose-theme .rbc-today {
+  background-color: #fff1f2 !important;
+}
+
+/* Events */
+.rbc-rose-theme .rbc-event {
+  background-color: #f43f5e;
+  border-radius: 6px;
+  border: none;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.rbc-rose-theme .rbc-event:focus,
+.rbc-rose-theme .rbc-event.rbc-selected {
+  background-color: #be123c;
+  outline: none;
+}
+
+.rbc-rose-theme .rbc-event-label {
+  font-size: 0.7rem;
+}
+
+/* Current time line */
+.rbc-rose-theme .rbc-current-time-indicator {
+  background-color: #f43f5e;
+}
+
+/* Off-range dates */
+.rbc-rose-theme .rbc-off-range-bg {
+  background: #fafafa;
+}
+
+/* Month view date cells */
+.rbc-rose-theme .rbc-date-cell {
+  font-size: 0.8rem;
+  padding: 4px 6px;
+  color: #374151;
+}
+
+.rbc-rose-theme .rbc-date-cell.rbc-now {
+  font-weight: 700;
+  color: #f43f5e;
+}
+
+/* Grid lines */
+.rbc-rose-theme .rbc-month-view,
+.rbc-rose-theme .rbc-time-view,
+.rbc-rose-theme .rbc-agenda-view {
+  border-color: #fecdd3;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.rbc-rose-theme .rbc-month-row,
+.rbc-rose-theme .rbc-day-bg + .rbc-day-bg,
+.rbc-rose-theme .rbc-header + .rbc-header {
+  border-color: #fecdd3;
+}
+
+.rbc-rose-theme .rbc-timeslot-group,
+.rbc-rose-theme .rbc-time-header-content,
+.rbc-rose-theme .rbc-time-content {
+  border-color: #fecdd3;
+}
+
+/* Show more */
+.rbc-rose-theme .rbc-show-more {
+  color: #f43f5e;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+/* Agenda view */
+.rbc-rose-theme .rbc-agenda-table thead {
+  background: #fff1f2;
+  color: #9f1239;
+}
+
+.rbc-rose-theme .rbc-agenda-date-cell,
+.rbc-rose-theme .rbc-agenda-time-cell {
+  color: #9f1239;
+  font-weight: 600;
+}
