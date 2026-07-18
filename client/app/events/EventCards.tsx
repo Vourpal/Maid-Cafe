@@ -70,11 +70,17 @@ export default function EventCards({
 }: EventCardProps) {
   const [attendances, setAttendances] = useState<AttendanceRecord[]>([]);
   const [showMine, setShowMine] = useState(false);
+  const [showFutureOnly, setShowFutureOnly] = useState(true);
   const { user, loading } = useUserAuthentication();
 
-  const displayedEvents = showMine
-    ? initialEvents.filter((e) => attendances.some((a) => a.event_id === e.id))
-    : initialEvents;
+  const now = new Date();
+  now.setHours(0, 0, 0, 0); // compare against start of today
+
+  const displayedEvents = initialEvents.filter((e) => {
+    if (showFutureOnly && new Date(e.end_datetime) < now) return false;
+    if (showMine && !attendances.some((a) => a.event_id === e.id)) return false;
+    return true;
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -125,7 +131,12 @@ export default function EventCards({
 
       {/* Filters */}
       <div className="mb-6">
-        <EventFilters showMine={showMine} setShowMine={setShowMine} />
+        <EventFilters
+          showMine={showMine}
+          setShowMine={setShowMine}
+          showFutureOnly={showFutureOnly}
+          setShowFutureOnly={setShowFutureOnly}
+        />
       </div>
 
       {/* Event list */}

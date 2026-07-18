@@ -1,16 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PracticeSessions } from "@/types/event";
+import { PracticeSessions, Attendance } from "@/types/event";
 import AddAttendance from "./AddAttendance";
 import EditAttendance from "./EditAttendance";
 import AddRoutine from "./AddRoutine";
 import EditRoutine from "./EditRoutine";
 import { authHeaders } from "@/lib/api";
-import { Attendance } from "@/types/event";
 import { useUserAuthentication } from "../UserAuthentication";
 import DeletePractice from "./DeletePractice";
 import EditPractice from "./EditPractice";
+import { MapPin, CalendarDays, FileText, X } from "lucide-react";
 
 type Routine = {
   id: number;
@@ -37,84 +37,50 @@ export default function ViewPractice({ event, onClose, setSessions }: Props) {
 
   const session = event?.resource;
 
-  // =========================
-  // 🧠 DEBUG: session changes
-  // =========================
-  useEffect(() => {
-    console.log("🧠 SESSION CHANGED:", session?.id);
-  }, [session]);
-
-  // =========================
-  // 🧠 DEBUG: state changes
-  // =========================
-  useEffect(() => {
-    console.log("📦 ROUTINES STATE UPDATED:", routines);
-  }, [routines]);
-
-  useEffect(() => {
-    console.log("📦 ATTENDANCE STATE UPDATED:", attendance);
-  }, [attendance]);
-
   useEffect(() => {
     if (!session) return;
-
-    console.log("🚀 FETCH START session:", session.id);
 
     setRoutines([]);
     setAttendance([]);
     setLoading(true);
 
-    const fetchData = async () => {
+    async function fetchData() {
       try {
-        // =========================
-        // ROUTINES
-        // =========================
-        try {
-          console.log("📡 Fetching routines...");
-
-          const routinesRes = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/practice-sessions/${session.id}/routines`,
+        const [routinesRes, attendanceRes] = await Promise.all([
+          fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/practice-sessions/${session!.id}/routines`,
             { headers: authHeaders() },
-          );
-
-          const routinesData = await routinesRes.json();
-
-          console.log("📦 ROUTINES RESPONSE:", routinesData);
-
-          setRoutines(routinesData?.data ?? []);
-        } catch (err) {
-          console.error("❌ Routines fetch failed:", err);
-          setRoutines([]);
-        }
-
-        // =========================
-        // ATTENDANCE
-        // =========================
-        try {
-          console.log("📡 Fetching attendance...");
-
-          const attendanceRes = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/practice-sessions/${session.id}/attendance`,
+          ),
+          fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/practice-sessions/${session!.id}/attendance`,
             { headers: authHeaders() },
-          );
+          ),
+        ]);
 
-          const attendanceData = await attendanceRes.json();
+        const routinesData = await routinesRes.json();
+        const attendanceData = await attendanceRes.json();
 
-          console.log("📦 ATTENDANCE RESPONSE:", attendanceData);
-
-          setAttendance(attendanceData?.data ?? []);
-        } catch (err) {
-          console.error("❌ Attendance fetch failed:", err);
-          setAttendance([]);
-        }
+        setRoutines(routinesData?.data ?? []);
+        setAttendance(attendanceData?.data ?? []);
+      } catch (err) {
+        console.error("Failed to fetch practice data:", err);
       } finally {
         setLoading(false);
-        console.log("✅ FETCH DONE");
       }
-    };
+    }
 
     fetchData();
   }, [session]);
+
+  // Close on Escape
+  useEffect(() => {
+    if (!event) return;
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [event, onClose]);
 
   if (!event) return null;
 
@@ -124,184 +90,189 @@ export default function ViewPractice({ event, onClose, setSessions }: Props) {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 z-40"
+        className="fixed inset-0 bg-black/50 z-40 backdrop-blur-[2px]"
         onClick={onClose}
       />
 
       {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-        <div className="bg-white p-6 rounded-xl max-w-5xl w-full pointer-events-auto shadow-lg max-h-[90vh] overflow-y-auto">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+        <div
+          className="bg-white rounded-2xl w-full max-w-3xl pointer-events-auto shadow-xl max-h-[90vh] flex flex-col overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* Header */}
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-rose-500 font-semibold text-lg">
-              🎀 {s.title}
-            </h2>
-            {user?.admin && (
-              <div className="flex gap-2 mb-4">
-                <EditPractice session={s} setSessions={setSessions} />
-
-                <DeletePractice
-                  session={s}
-                  setSessions={setSessions}
-                  onDeleted={onClose}
-                />
-              </div>
-            )}
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* Session Info */}
-          <div className="flex flex-col gap-2 text-sm mb-4">
-            <p>
-              <strong>📍 Location:</strong> {s.location || "N/A"}
-            </p>
-            <p>
-              <strong>📅 Date:</strong> {new Date(s.date).toLocaleString()}
-            </p>
-            <p>
-              <strong>📝 Notes:</strong> {s.notes || "None"}
-            </p>
-          </div>
-
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 border-4 border-rose-200 border-t-rose-500 rounded-full animate-spin" />
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-4">
-              {/* 👥 ATTENDANCE */}
-              <div className="border border-rose-200 rounded-xl p-3 flex flex-col gap-3">
-                <h3 className="text-rose-500 font-semibold">👥 Attendance</h3>
-
-                {user && user.admin && (
-                  <span>
-                    <AddAttendance
-                      practiceId={s.id}
-                      onDone={(newAttendees) => {
-                        console.log(
-                          "🔥 ADD ATTENDANCE CALLBACK:",
-                          newAttendees,
-                        );
-
-                        setAttendance((prev) => {
-                          const merged = [
-                            ...prev,
-                            ...(Array.isArray(newAttendees)
-                              ? newAttendees
-                              : []),
-                          ];
-
-                          console.log("🔥 MERGED ATTENDANCE:", merged);
-                          return merged;
-                        });
-                      }}
-                    />
-
-                    <EditAttendance
-                      practiceId={s.id}
-                      attendance={attendance}
-                      onDone={(updated) => {
-                        console.log("🔥 EDIT ATTENDANCE CALLBACK:", updated);
-                        setAttendance(updated);
-                      }}
-                    />
+          <div className="px-6 py-4 border-b border-rose-50 shrink-0">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="font-bold text-gray-800 text-lg leading-tight truncate">
+                  {s.title}
+                </h2>
+                <div className="flex flex-wrap gap-3 mt-1.5 text-xs text-gray-400">
+                  {s.location && (
+                    <span className="flex items-center gap-1">
+                      <MapPin className="w-3 h-3 shrink-0" />
+                      {s.location}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1">
+                    <CalendarDays className="w-3 h-3 shrink-0" />
+                    {new Date(s.date).toLocaleString("en-US", {
+                      weekday: "short", month: "long",
+                      day: "numeric", hour: "numeric", minute: "2-digit",
+                    })}
                   </span>
-                )}
+                  {s.notes && (
+                    <span className="flex items-center gap-1">
+                      <FileText className="w-3 h-3 shrink-0" />
+                      {s.notes}
+                    </span>
+                  )}
+                </div>
+              </div>
 
-                <div className="flex flex-col gap-2 mt-2">
-                  {attendance.length === 0 ? (
-                    <p className="text-sm text-gray-400">
-                      No attendance recorded
-                    </p>
-                  ) : (
-                    attendance.map((a) => (
-                      <div
-                        key={a.id}
-                        className="border border-rose-100 rounded-md p-2"
-                      >
-                        <div className="flex justify-between text-sm">
-                          <div className="font-medium">
+              {/* Admin actions + close */}
+              <div className="flex items-center gap-2 shrink-0">
+                {user?.admin && (
+                  <>
+                    <EditPractice session={s} setSessions={setSessions} />
+                    <DeletePractice session={s} setSessions={setSessions} onDeleted={onClose} />
+                  </>
+                )}
+                <button
+                  onClick={onClose}
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Body */}
+          <div className="overflow-y-auto flex-1 p-6">
+            {loading ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="w-8 h-8 border-4 border-rose-200 border-t-rose-500 rounded-full animate-spin" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                {/* ATTENDANCE */}
+                <div className="border border-rose-100 rounded-xl overflow-hidden">
+                  <div className="px-4 py-3 bg-rose-50 border-b border-rose-100 flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-rose-700">
+                      👥 Attendance
+                      {attendance.length > 0 && (
+                        <span className="ml-1.5 text-xs bg-rose-100 text-rose-600 px-1.5 py-0.5 rounded-full font-normal">
+                          {attendance.length}
+                        </span>
+                      )}
+                    </h3>
+                  </div>
+
+                  {user?.admin && (
+                    <div className="px-4 py-3 border-b border-rose-50 flex gap-2">
+                      <AddAttendance
+                        practiceId={s.id}
+                        onDone={(newAttendees) => {
+                          setAttendance((prev) => [
+                            ...prev,
+                            ...(Array.isArray(newAttendees) ? newAttendees : []),
+                          ]);
+                        }}
+                      />
+                      <EditAttendance
+                        practiceId={s.id}
+                        attendance={attendance}
+                        onDone={(updated) => setAttendance(updated)}
+                      />
+                    </div>
+                  )}
+
+                  <div className="p-4 space-y-2 max-h-72 overflow-y-auto">
+                    {attendance.length === 0 ? (
+                      <p className="text-sm text-gray-400 text-center py-4">
+                        No attendance recorded
+                      </p>
+                    ) : (
+                      attendance.map((a) => (
+                        <div
+                          key={a.id}
+                          className="flex items-center justify-between text-sm border border-rose-50 rounded-lg px-3 py-2"
+                        >
+                          <span className="font-medium text-gray-800">
                             {a.first_name} {a.last_name}
-                          </div>
-                          <div className="text-xs flex gap-2">
-                            <span
-                              className={
-                                a.attended ? "text-green-500" : "text-red-400"
-                              }
-                            >
+                          </span>
+                          <div className="flex gap-1.5 text-xs">
+                            <span className={`px-1.5 py-0.5 rounded-full font-medium ${
+                              a.attended
+                                ? "bg-green-50 text-green-700"
+                                : "bg-red-50 text-red-600"
+                            }`}>
                               {a.attended ? "Present" : "Absent"}
                             </span>
                             {a.late && (
-                              <span className="text-yellow-500">Late</span>
+                              <span className="px-1.5 py-0.5 rounded-full font-medium bg-amber-50 text-amber-700">
+                                Late
+                              </span>
                             )}
                           </div>
                         </div>
+                      ))
+                    )}
+                  </div>
+                </div>
 
-                        {a.notes && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            {a.notes}
-                          </div>
-                        )}
-                      </div>
-                    ))
+                {/* ROUTINES */}
+                <div className="border border-rose-100 rounded-xl overflow-hidden">
+                  <div className="px-4 py-3 bg-rose-50 border-b border-rose-100">
+                    <h3 className="text-sm font-semibold text-rose-700">
+                      🎯 Routines
+                      {routines.length > 0 && (
+                        <span className="ml-1.5 text-xs bg-rose-100 text-rose-600 px-1.5 py-0.5 rounded-full font-normal">
+                          {routines.length}
+                        </span>
+                      )}
+                    </h3>
+                  </div>
+
+                  {user?.admin && (
+                    <div className="px-4 py-3 border-b border-rose-50 flex gap-2">
+                      <AddRoutine
+                        practiceId={s.id}
+                        setRoutines={(updateFn) => setRoutines(updateFn)}
+                      />
+                      <EditRoutine
+                        practiceId={s.id}
+                        routines={routines}
+                        onDone={(updated) => setRoutines(updated)}
+                      />
+                    </div>
                   )}
+
+                  <div className="p-4 space-y-2 max-h-72 overflow-y-auto">
+                    {routines.length === 0 ? (
+                      <p className="text-sm text-gray-400 text-center py-4">
+                        No routines for this session
+                      </p>
+                    ) : (
+                      routines.map((r) => (
+                        <div
+                          key={r.id}
+                          className="border border-rose-50 rounded-lg px-3 py-2"
+                        >
+                          <p className="text-sm font-medium text-gray-800">{r.name}</p>
+                          {r.notes && (
+                            <p className="text-xs text-gray-500 mt-0.5">{r.notes}</p>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
-
-              {/* 🎯 ROUTINES */}
-              <div className="border border-rose-200 rounded-xl p-3 flex flex-col gap-3">
-                <h3 className="text-rose-500 font-semibold">🎯 Routines</h3>
-
-                {user && user.admin && (
-                  <span>
-                    <AddRoutine
-                      practiceId={s.id}
-                      setRoutines={(updateFn) => {
-                        console.log("🔥 ADD ROUTINE UPDATE");
-                        setRoutines(updateFn);
-                      }}
-                    />
-
-                    <EditRoutine
-                      practiceId={s.id}
-                      routines={routines}
-                      onDone={(updated) => {
-                        console.log("🔥 EDIT ROUTINE CALLBACK:", updated);
-                        setRoutines(updated);
-                      }}
-                    />
-                  </span>
-                )}
-
-                <div className="flex flex-col gap-2 mt-2">
-                  {routines.length === 0 ? (
-                    <p className="text-sm text-gray-400">
-                      No routines for this practice
-                    </p>
-                  ) : (
-                    routines.map((r) => (
-                      <div
-                        key={r.id}
-                        className="border border-rose-100 rounded-md p-2"
-                      >
-                        <div className="font-medium text-sm">{r.name}</div>
-                        {r.notes && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            {r.notes}
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </>
