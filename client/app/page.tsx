@@ -7,15 +7,40 @@ import { toast } from "sonner";
 import {
   ArrowRight,
   Sparkles,
+  BriefcaseBusiness,
   CalendarDays,
   Check,
   ClipboardList,
   Dumbbell,
   MapPin,
+  Megaphone,
+  Pin,
   Clock,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
-import type { Task } from "@/types/admin";
+import type {
+  Announcement,
+  AnnouncementListResponse,
+  Assignment,
+  Task,
+} from "@/types/admin";
+
+const PRIORITY_STYLES: Record<string, string> = {
+  normal: "border-rose-100",
+  important: "border-amber-200 bg-amber-50/40",
+  urgent: "border-red-200 bg-red-50/40",
+};
+
+/** Shift window, or "All day" when the assignment has no times. */
+function shiftWindow(assignment: Assignment): string {
+  if (!assignment.starts_at || !assignment.ends_at) return "All day";
+  const time = (iso: string) =>
+    new Date(iso).toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  return `${time(assignment.starts_at)} – ${time(assignment.ends_at)}`;
+}
 
 type UpcomingEvent = {
   id: number;
@@ -37,6 +62,8 @@ export default function Home() {
   const [nextEvent, setNextEvent] = useState<UpcomingEvent | null>(null);
   const [nextSession, setNextSession] = useState<UpcomingSession | null>(null);
   const [myTasks, setMyTasks] = useState<Task[]>([]);
+  const [myShifts, setMyShifts] = useState<Assignment[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
 
   // Fetch the single soonest upcoming event (public endpoint)
   useEffect(() => {
@@ -80,6 +107,23 @@ export default function Home() {
     apiFetch<Task[]>("/tasks/me?completed=false")
       .then(setMyTasks)
       .catch(() => setMyTasks([]));
+  }, [user]);
+
+  // Shifts this member has been given, upcoming events only.
+  useEffect(() => {
+    if (!user) return;
+    apiFetch<Assignment[]>("/assignments/me")
+      .then(setMyShifts)
+      .catch(() => setMyShifts([]));
+  }, [user]);
+
+  // The feed only ever contains published, unexpired entries — the server
+  // handles that, so there is nothing to filter here.
+  useEffect(() => {
+    if (!user) return;
+    apiFetch<AnnouncementListResponse>("/announcements?quantity=10")
+      .then((res) => setAnnouncements(res.announcements))
+      .catch(() => setAnnouncements([]));
   }, [user]);
 
   async function completeTask(task: Task) {
@@ -136,6 +180,63 @@ export default function Home() {
         <div className="absolute -right-8 -top-8 w-48 h-48 rounded-full bg-white/10" />
         <div className="absolute -right-4 -bottom-12 w-64 h-64 rounded-full bg-white/5" />
       </div>
+
+      {/* Announcements — pinned first, expired ones never arrive */}
+      {user && !loading && announcements.length > 0 && (
+        <div className="space-y-3">
+          {announcements.map((entry) => (
+            <div
+              key={entry.id}
+              className={`bg-white rounded-2xl border shadow-sm p-5 ${
+                PRIORITY_STYLES[entry.priority] ?? PRIORITY_STYLES.normal
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center shrink-0">
+                  <Megaphone className="w-4 h-4 text-rose-500" />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="font-semibold text-gray-800">{entry.title}</h2>
+                    {entry.pinned && (
+                      <span className="text-xs bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                        <Pin className="w-3 h-3" />
+                        Pinned
+                      </span>
+                    )}
+                    {entry.priority !== "normal" && (
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full capitalize ${
+                          entry.priority === "urgent"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        {entry.priority}
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-sm text-gray-600 mt-1.5 whitespace-pre-line">
+                    {entry.body}
+                  </p>
+
+                  <p className="text-xs text-gray-400 mt-2">
+                    {entry.author_label ?? "Staff"}
+                    {entry.created_at &&
+                      ` · ${new Date(entry.created_at).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })}`}
+                    {entry.event_title && ` · ${entry.event_title}`}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Logged-in: upcoming snapshots */}
       {user && !loading && (
@@ -216,6 +317,60 @@ export default function Home() {
               )}
             </div>
           </Link>
+        </div>
+      )}
+
+      {/* Your shifts — the job side of an event, next to the RSVP side */}
+      {user && !loading && myShifts.length > 0 && (
+        <div className="bg-white rounded-2xl border border-rose-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-rose-50 flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center">
+              <BriefcaseBusiness className="w-4 h-4 text-rose-500" />
+            </div>
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+              Your shifts
+            </span>
+            <span className="ml-auto text-xs bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full font-medium">
+              {myShifts.length}
+            </span>
+          </div>
+
+          <div className="divide-y divide-rose-50">
+            {myShifts.map((shift) => (
+              <div key={shift.id} className="px-5 py-3">
+                <p className="text-sm font-medium text-gray-800">
+                  {shift.position_name}
+                  <span className="ml-2 text-xs font-normal text-gray-400">
+                    {shift.event_title}
+                  </span>
+                </p>
+                <div className="flex flex-wrap gap-3 mt-1 text-xs text-gray-400">
+                  <span className="flex items-center gap-1">
+                    <CalendarDays className="w-3 h-3 shrink-0" />
+                    {shift.event_start &&
+                      new Date(shift.event_start).toLocaleDateString("en-US", {
+                        weekday: "short",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-3 h-3 shrink-0" />
+                    {shiftWindow(shift)}
+                  </span>
+                  {shift.event_location && (
+                    <span className="flex items-center gap-1">
+                      <MapPin className="w-3 h-3 shrink-0" />
+                      {shift.event_location}
+                    </span>
+                  )}
+                </div>
+                {shift.notes && (
+                  <p className="text-xs text-gray-400 mt-1">{shift.notes}</p>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

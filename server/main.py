@@ -4,12 +4,17 @@ import traceback
 import os
 from utils import APIError
 from routes.admin_routes import admin_bp
+from routes.announcement_routes import announcement_bp
 from routes.auth_routes import auth_bp
 from routes.user_routes import user_bp
+from routes.costume_routes import costume_bp
 from routes.event_routes import event_bp
 from routes.attendance_routes import attendance_bp
 from routes.export_routes import export_bp
+from routes.menu_routes import menu_bp
+from routes.position_routes import position_bp
 from routes.practice_routes import practice_bp
+from routes.proficiency_routes import proficiency_bp
 from routes.invite_routes import invite_bp
 from routes.link_routes import link_bp
 from routes.task_routes import task_bp
@@ -33,6 +38,11 @@ app.register_blueprint(invite_bp)
 app.register_blueprint(link_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(task_bp)
+app.register_blueprint(position_bp)
+app.register_blueprint(proficiency_bp)
+app.register_blueprint(costume_bp)
+app.register_blueprint(menu_bp)
+app.register_blueprint(announcement_bp)
 app.register_blueprint(export_bp)
 
 

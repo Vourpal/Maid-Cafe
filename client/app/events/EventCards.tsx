@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { authHeadersNoContent, downloadCsv } from "@/lib/api";
 import EventInfo from "./EventInfo";
 import EventRoster from "./EventRoster";
+import EventAssignments from "./EventAssignments";
+import EventMenuManager from "./EventMenuManager";
 import { MapPin, Users, CalendarDays, Download } from "lucide-react";
 import { toast } from "sonner";
 
@@ -76,6 +78,8 @@ export default function EventCards({
   const [showMine, setShowMine] = useState(false);
   const [showFutureOnly, setShowFutureOnly] = useState(initialFutureOnly);
   const [rosterEventId, setRosterEventId] = useState<number | null>(null);
+  const [shiftsEventId, setShiftsEventId] = useState<number | null>(null);
+  const [menuEventId, setMenuEventId] = useState<number | null>(null);
   const { user, loading } = useUserAuthentication();
 
   // showMine is still client-side (it only hides events the user isn't attending,
@@ -277,6 +281,22 @@ export default function EventCards({
                           <Button
                             size="sm"
                             variant="outline"
+                            className="border-rose-300 text-rose-500 hover:bg-rose-50 h-7 text-xs rounded-full"
+                            onClick={() => setShiftsEventId(event.id)}
+                          >
+                            Shifts
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-rose-300 text-rose-500 hover:bg-rose-50 h-7 text-xs rounded-full"
+                            onClick={() => setMenuEventId(event.id)}
+                          >
+                            Menu
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
                             className="border-gray-200 text-gray-500 hover:bg-gray-50 h-7 text-xs rounded-full"
                             onClick={() => handleExportRoster(event)}
                           >
@@ -298,6 +318,20 @@ export default function EventCards({
         <EventRoster
           eventId={rosterEventId}
           onClose={() => setRosterEventId(null)}
+        />
+      )}
+
+      {shiftsEventId !== null && (
+        <EventAssignments
+          eventId={shiftsEventId}
+          onClose={() => setShiftsEventId(null)}
+        />
+      )}
+
+      {menuEventId !== null && (
+        <EventMenuManager
+          eventId={menuEventId}
+          onClose={() => setMenuEventId(null)}
         />
       )}
     </div>

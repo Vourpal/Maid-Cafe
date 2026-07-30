@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { authHeaders } from "@/lib/api";
 import { User, Lock, CalendarDays, Pencil } from "lucide-react";
+import MyRoutines from "./MyRoutines";
 
 const days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
@@ -599,6 +600,9 @@ export default function Account() {
           </>
         )}
       </Section>
+
+      {/* Routine proficiency — read-only, set by an admin */}
+      <MyRoutines />
     </div>
   );
 }

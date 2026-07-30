@@ -87,21 +87,82 @@ def get_practice_attendance(db, practice_id: int):
     ]
 
 
+# Columns update_routine is allowed to write. Anything else in the payload is
+# ignored rather than interpolated into SQL.
+_ROUTINE_COLUMNS = (
+    "name",
+    "notes",
+    "music_url",
+    "video_url",
+    "duration_seconds",
+    "bpm",
+    "formation_notes",
+    "difficulty",
+    "member_count",
+)
+
+# Detail columns shared by the catalog and single-routine selects, in the order
+# _routine_detail unpacks them.
+_ROUTINE_DETAIL_SELECT = """
+    r.music_url,
+    r.video_url,
+    r.duration_seconds,
+    r.bpm,
+    r.formation_notes,
+    r.difficulty,
+    r.member_count
+"""
+
+# Every routine detail column has to appear in GROUP BY because these selects
+# aggregate over the join table.
+_ROUTINE_GROUP_BY = """
+    r.id, r.name, r.notes, r.music_url, r.video_url, r.duration_seconds,
+    r.bpm, r.formation_notes, r.difficulty, r.member_count
+"""
+
+
+def _routine_detail(row, offset: int) -> dict:
+    """Unpack the seven detail columns starting at `offset`."""
+    return {
+        "music_url": row[offset],
+        "video_url": row[offset + 1],
+        "duration_seconds": row[offset + 2],
+        "bpm": row[offset + 3],
+        "formation_notes": row[offset + 4],
+        "difficulty": row[offset + 5],
+        "member_count": row[offset + 6],
+    }
+
+
 def get_all_routines(db):
     """Routine catalog with how many sessions each routine is attached to, so
-    admins can see what is safe to delete."""
+    admins can see what is safe to delete.
+
+    `ready_count` is how many active members are at can_perform or better, which
+    is what makes the catalog usable for planning a set list.
+    """
     db.execute(
-        """
+        f"""
         SELECT
             r.id,
             r.name,
             r.notes,
             COUNT(pr.id) AS usage_count,
-            MAX(ps.date) AS last_used
+            MAX(ps.date) AS last_used,
+            {_ROUTINE_DETAIL_SELECT},
+            (SELECT COUNT(*)
+                FROM routine_proficiency rp
+                JOIN users u ON u.id = rp.user_id
+                WHERE rp.routine_id = r.id
+                  AND rp.level IN ('can_perform', 'lead')
+                  AND u.active) AS ready_count,
+            (SELECT COUNT(*)
+                FROM routine_proficiency rp
+                WHERE rp.routine_id = r.id) AS tracked_count
         FROM routines r
         LEFT JOIN practice_session_routines pr ON pr.routine_id = r.id
         LEFT JOIN practice_sessions ps ON ps.id = pr.practice_session_id
-        GROUP BY r.id, r.name, r.notes
+        GROUP BY {_ROUTINE_GROUP_BY}
         ORDER BY r.name;
         """
     )
@@ -115,6 +176,9 @@ def get_all_routines(db):
             "notes": row[2],
             "usage_count": row[3],
             "last_used": row[4].isoformat() if row[4] else None,
+            **_routine_detail(row, 5),
+            "ready_count": row[12],
+            "tracked_count": row[13],
         }
         for row in rows
     ]
@@ -122,12 +186,17 @@ def get_all_routines(db):
 
 def get_routine_by_id(db, routine_id: int):
     db.execute(
-        """
-        SELECT r.id, r.name, r.notes, COUNT(pr.id)
+        f"""
+        SELECT
+            r.id,
+            r.name,
+            r.notes,
+            COUNT(pr.id),
+            {_ROUTINE_DETAIL_SELECT}
         FROM routines r
         LEFT JOIN practice_session_routines pr ON pr.routine_id = r.id
         WHERE r.id = %s
-        GROUP BY r.id, r.name, r.notes;
+        GROUP BY {_ROUTINE_GROUP_BY};
         """,
         (routine_id,),
     )
@@ -140,10 +209,11 @@ def get_routine_by_id(db, routine_id: int):
         "name": row[1],
         "notes": row[2],
         "usage_count": row[3],
+        **_routine_detail(row, 4),
     }
 
 
-def create_routine_standalone(db, name: str, notes: str | None):
+def create_routine_standalone(db, routine):
     """Add a routine to the catalog without attaching it to a session.
 
     Unlike create_routine this reports a name collision instead of silently
@@ -151,12 +221,24 @@ def create_routine_standalone(db, name: str, notes: str | None):
     """
     db.execute(
         """
-        INSERT INTO routines (name, notes)
-        VALUES (%s, %s)
+        INSERT INTO routines
+            (name, notes, music_url, video_url, duration_seconds, bpm,
+             formation_notes, difficulty, member_count)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (name) DO NOTHING
         RETURNING id;
         """,
-        (name, notes),
+        (
+            routine.name,
+            routine.notes,
+            routine.music_url,
+            routine.video_url,
+            routine.duration_seconds,
+            routine.bpm,
+            routine.formation_notes,
+            routine.difficulty,
+            routine.member_count,
+        ),
     )
     row = db.fetchone()
     return row[0] if row else None
@@ -263,31 +345,48 @@ def add_routine_to_practice(db, practice_id: int, routine_id: int):
 
 
 def get_routines_by_practice(db, practice_id: int):
+    """Includes the detail columns so the practice page can link the music and
+    reference video for what is being run that day."""
     db.execute(
-        """
-        SELECT r.id, r.name, r.notes
+        f"""
+        SELECT
+            r.id,
+            r.name,
+            r.notes,
+            {_ROUTINE_DETAIL_SELECT}
         FROM routines r
         JOIN practice_session_routines pr
           ON pr.routine_id = r.id
-        WHERE pr.practice_session_id = %s;
+        WHERE pr.practice_session_id = %s
+        ORDER BY r.name;
         """,
         (practice_id,),
     )
 
     rows = db.fetchall()
 
-    return [{"id": row[0], "name": row[1], "notes": row[2]} for row in rows]
+    return [
+        {
+            "id": row[0],
+            "name": row[1],
+            "notes": row[2],
+            **_routine_detail(row, 3),
+        }
+        for row in rows
+    ]
 
 
 def update_routine(db, routine_id: int, routine):
-    """Partial update. Previously this always wrote both columns, so a PATCH
+    """Partial update driven by exclude_unset, so an explicit null clears a
+    nullable detail column (removing a music link, say) while an absent field is
+    left untouched. Previously this always wrote both columns, so a PATCH
     carrying only `notes` would null out the NOT NULL `name` column."""
     payload = routine.model_dump(exclude_unset=True)
 
     fields = []
     values = []
 
-    for column in ("name", "notes"):
+    for column in _ROUTINE_COLUMNS:
         if column in payload:
             fields.append(f"{column} = %s")
             values.append(payload[column])

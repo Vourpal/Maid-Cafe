@@ -32,6 +32,33 @@ from utils import APIError, get_db, int_arg, success_response
 
 practice_bp = Blueprint("practice", __name__)
 
+# Matches the CHECK constraint on routines.difficulty. Validated here so a bad
+# value comes back as a readable 422 instead of a CheckViolation surfacing as a
+# 500 from the global handler.
+_DIFFICULTIES = {"easy", "medium", "hard"}
+
+# Fields on the routine detail that must be positive when supplied.
+_POSITIVE_ROUTINE_FIELDS = ("duration_seconds", "bpm", "member_count")
+
+
+def _validate_routine_detail(requested: dict):
+    difficulty = requested.get("difficulty")
+    if difficulty is not None and difficulty not in _DIFFICULTIES:
+        raise APIError(
+            "VALIDATION_ERROR",
+            f"Difficulty must be one of: {', '.join(sorted(_DIFFICULTIES))}",
+            422,
+        )
+
+    for field in _POSITIVE_ROUTINE_FIELDS:
+        value = requested.get(field)
+        if value is not None and value <= 0:
+            raise APIError(
+                "VALIDATION_ERROR",
+                f"{field.replace('_', ' ').capitalize()} must be greater than zero",
+                422,
+            )
+
 
 # TODO: add validation errors
 @practice_bp.route("/practice-sessions", methods=["GET"])
@@ -180,8 +207,11 @@ def create_routine_route(user_id):
         name = payload.name.strip()
         if not name:
             raise APIError("VALIDATION_ERROR", "Name is required", 422)
+        payload.name = name
 
-        routine_id = create_routine_standalone(cur, name, payload.notes)
+        _validate_routine_detail(payload.model_dump(exclude_unset=True))
+
+        routine_id = create_routine_standalone(cur, payload)
         if routine_id is None:
             raise APIError(
                 "DUPLICATE_ROUTINE", f"A routine named '{name}' already exists", 409
@@ -197,7 +227,7 @@ def create_routine_route(user_id):
             summary=f"Created routine '{name}'",
         )
 
-        return success_response({"id": routine_id, "name": name}, 201)
+        return success_response(get_routine_by_id(cur, routine_id), 201)
 
 
 @practice_bp.route("/routines/<int:routine_id>", methods=["DELETE"])
@@ -406,6 +436,8 @@ def edit_routine(user_id, routine_id):
     if "name" in requested and not (requested["name"] or "").strip():
         raise APIError("VALIDATION_ERROR", "Name cannot be empty", 422)
 
+    _validate_routine_detail(requested)
+
     with get_db() as (conn, cur):
         before = get_routine_by_id(cur, routine_id)
         if before is None:
@@ -421,12 +453,13 @@ def edit_routine(user_id, routine_id):
         if not updated:
             raise APIError("NOT_FOUND", "Routine not found", 404)
 
+        after = get_routine_by_id(cur, routine_id)
+
+        # Diff only the fields the caller actually sent, so a PATCH that touches
+        # the BPM does not log the whole record.
         changes = diff_changes(
-            {"name": before["name"], "notes": before["notes"]},
-            {
-                "name": requested.get("name", before["name"]),
-                "notes": requested.get("notes", before["notes"]),
-            },
+            {key: before.get(key) for key in requested},
+            {key: after.get(key) for key in requested},
         )
         if changes:
             record_audit(
@@ -440,7 +473,7 @@ def edit_routine(user_id, routine_id):
                 changes=changes,
             )
 
-        return success_response({"id": updated}, 200)
+        return success_response(after, 200)
 
 
 @practice_bp.route(

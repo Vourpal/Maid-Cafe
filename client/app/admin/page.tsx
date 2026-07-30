@@ -3,22 +3,32 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
+  BriefcaseBusiness,
   ClipboardList,
   LayoutDashboard,
+  Megaphone,
   Music,
   ScrollText,
   ShieldCheck,
+  Shirt,
+  Sparkles,
   Ticket,
   TrendingUp,
+  UtensilsCrossed,
   Users,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUserAuthentication } from "../UserAuthentication";
+import AnnouncementsTab from "./AnnouncementsTab";
 import AuditLogTab from "./AuditLogTab";
+import CostumesTab from "./CostumesTab";
 import InvitesTab from "./InvitesTab";
+import MenuTab from "./MenuTab";
 import OverviewTab from "./OverviewTab";
+import ProficiencyTab from "./ProficiencyTab";
 import ReportsTab from "./ReportsTab";
 import RoutinesTab from "./RoutinesTab";
+import ShiftsTab from "./ShiftsTab";
 import StaffTab from "./StaffTab";
 import TasksTab from "./TasksTab";
 
@@ -26,8 +36,13 @@ const TABS = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "staff", label: "Staff", icon: Users },
   { id: "tasks", label: "Tasks", icon: ClipboardList },
+  { id: "shifts", label: "Shifts", icon: BriefcaseBusiness },
   { id: "reports", label: "Reports", icon: TrendingUp },
   { id: "routines", label: "Routines", icon: Music },
+  { id: "proficiency", label: "Proficiency", icon: Sparkles },
+  { id: "costumes", label: "Costumes", icon: Shirt },
+  { id: "menu", label: "Menu", icon: UtensilsCrossed },
+  { id: "announcements", label: "Announcements", icon: Megaphone },
   { id: "invites", label: "Invites", icon: Ticket },
   { id: "audit", label: "Audit Log", icon: ScrollText },
 ] as const;
@@ -85,7 +100,7 @@ function AdminPanel() {
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Admin Panel</h1>
           <p className="text-gray-500 text-sm">
-            Staff, tasks, reporting and activity history
+            Staff, shifts, routines, inventory, menus and activity history
           </p>
         </div>
       </div>
@@ -111,8 +126,13 @@ function AdminPanel() {
       {activeTab === "overview" && <OverviewTab />}
       {activeTab === "staff" && <StaffTab currentUserId={user.id} />}
       {activeTab === "tasks" && <TasksTab />}
+      {activeTab === "shifts" && <ShiftsTab />}
       {activeTab === "reports" && <ReportsTab />}
       {activeTab === "routines" && <RoutinesTab />}
+      {activeTab === "proficiency" && <ProficiencyTab />}
+      {activeTab === "costumes" && <CostumesTab />}
+      {activeTab === "menu" && <MenuTab />}
+      {activeTab === "announcements" && <AnnouncementsTab />}
       {activeTab === "invites" && <InvitesTab />}
       {activeTab === "audit" && <AuditLogTab />}
     </div>

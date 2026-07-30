@@ -10,6 +10,7 @@ from queries.attendance_queries import (
     update_attendance,
 )
 from queries.audit_queries import diff_changes, record_audit
+from queries.position_queries import delete_event_assignments_for_user
 from queries.user_queries import get_me
 from models import AdminAttendanceUpdate, NewAttendance, UpdatedAttendance
 from middleware import require_auth
@@ -146,9 +147,32 @@ def attendance_detail(user_id, attendance_id):
             return success_response({"updated": edited_attendance}, 200)
 
         elif request.method == "DELETE":
+            # Job assignments are only valid for people on the roster, so
+            # leaving the RSVP behind would leave a shift assigned to somebody
+            # who is no longer coming. Same transaction as the delete.
+            dropped_shifts = delete_event_assignments_for_user(
+                cur, attendance.event_id, attendance.user_id
+            )
+
             deleted = delete_attendance(cur, attendance_id)
             if deleted is None:
                 raise APIError("ATTENDANCE_NOT_FOUND", f"Attendance {attendance_id} does not exist", 404)
+
+            if dropped_shifts:
+                record_audit(
+                    cur,
+                    actor_id=user_id,
+                    actor=current_user,
+                    action="delete",
+                    entity_type="event_assignment",
+                    entity_id=attendance.event_id,
+                    summary=(
+                        f"Dropped {len(dropped_shifts)} shift assignment(s) for "
+                        f"user {attendance.user_id} after their RSVP for event "
+                        f"{attendance.event_id} was removed"
+                    ),
+                    changes={"assignment_ids": dropped_shifts},
+                )
 
             if is_admin_override:
                 record_audit(
