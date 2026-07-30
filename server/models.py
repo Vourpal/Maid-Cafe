@@ -55,6 +55,31 @@ class UserUpdate(BaseModel):
     availability: dict | None = None
 
 
+class AdminUserUpdate(UserUpdate):
+    """Everything a user can change about themselves, plus the two flags only
+    an admin may set."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    admin: bool | None = None
+    active: bool | None = None
+
+
+class AdminStaffMember(BaseModel):
+    """Row shape for the admin staff directory. Unlike UserMe this exposes
+    `active`, which admins need in order to manage accounts."""
+
+    id: int
+    first_name: str
+    last_name: str
+    email: str
+    username: str
+    admin: bool
+    active: bool
+    type: str | None = None
+    availability: dict | None = None
+
+
 class UserAuthorization(UserBase):
     id: int | None = None
     password: str
@@ -116,6 +141,30 @@ class UpdatedAttendance(BaseModel):
     role: str | None = None
 
 
+class AdminAttendanceUpdate(BaseModel):
+    """Admin override of somebody else's RSVP. Adds `notes`, which members
+    cannot edit through UpdatedAttendance."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    status: str | None = None
+    seats_available: int | None = None
+    role: str | None = None
+    notes: str | None = None
+
+
+class AdminAttendanceCreate(BaseModel):
+    """Admin signing a member up on their behalf."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    user_id: int
+    status: str
+    role: str | None = None
+    seats_available: int | None = None
+    notes: str | None = None
+
+
 class Task(BaseModel):
     id: int | None = None
     title: str
@@ -125,6 +174,46 @@ class Task(BaseModel):
     due_date: datetime | None = None
     event_id: int | None = None
     completed: bool = False
+
+
+class TaskCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: str
+    description: str | None = None
+    assigned_to: int | None = None
+    due_date: datetime | None = None
+    event_id: int | None = None
+    completed: bool = False
+
+
+class TaskUpdate(BaseModel):
+    """Partial update. Unset fields are left alone; explicit nulls clear the
+    column (that is how a task gets unassigned or has its due date removed),
+    so the query layer uses exclude_unset rather than None-checks."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    title: str | None = None
+    description: str | None = None
+    assigned_to: int | None = None
+    due_date: datetime | None = None
+    event_id: int | None = None
+    completed: bool | None = None
+
+
+class RoutineCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    notes: str | None = None
+
+
+class RoutineUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str | None = None
+    notes: str | None = None
 
 
 class PracticeSession(BaseModel):

@@ -3,7 +3,7 @@ from functools import wraps
 from flask import request
 
 from auth import verify_token
-from db import connect_db
+from db import connect_db, release_db
 from queries.user_queries import get_me
 from utils import APIError
 
@@ -91,13 +91,20 @@ def require_admin(func):
             raise APIError("UNAUTHORIZED", "Invalid token", 401)
 
         conn = connect_db()
-        cur = conn.cursor()
         try:
+            cur = conn.cursor()
             user = get_me(cur, user_id)
+
+            # A token for a since-deleted user is not a valid session.
+            if user is None:
+                raise APIError("UNAUTHORIZED", "Invalid token", 401)
+
             if not user.admin:
                 raise APIError("FORBIDDEN", "Admins only", 403)
         finally:
-            conn.close()
+            # Return the connection to the pool. conn.close() would drop it
+            # while the pool still counted it as in use, leaking a slot per call.
+            release_db(conn)
 
         return func(user_id=user_id, *args, **kwargs)
 

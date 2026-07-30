@@ -69,11 +69,37 @@ CREATE TABLE IF NOT EXISTS tasks (
     due_date TIMESTAMP,
     event_id INTEGER,
     completed BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     FOREIGN KEY (created_by) REFERENCES users(id),
-    FOREIGN KEY (assigned_to) REFERENCES users(id),
+    FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
 );
+
+CREATE INDEX IF NOT EXISTS idx_tasks_assigned_to ON tasks (assigned_to);
+CREATE INDEX IF NOT EXISTS idx_tasks_event_id ON tasks (event_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_completed ON tasks (completed);
+CREATE INDEX IF NOT EXISTS idx_tasks_due_date ON tasks (due_date);
+
+-- ======================
+-- AUDIT LOG
+-- ======================
+-- actor_label is denormalised so the log survives deletion of the actor.
+CREATE TABLE IF NOT EXISTS audit_log (
+    id BIGSERIAL PRIMARY KEY,
+    actor_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    actor_label VARCHAR(150),
+    action VARCHAR(50) NOT NULL,
+    entity_type VARCHAR(50) NOT NULL,
+    entity_id INTEGER,
+    summary VARCHAR(255),
+    changes JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_log_entity ON audit_log (entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS idx_audit_log_actor ON audit_log (actor_id);
 
 -- ======================
 -- PRACTICE SESSIONS
@@ -166,3 +192,10 @@ CREATE TABLE IF NOT EXISTS links (
 -- INDEXES
 -- ======================
 CREATE INDEX IF NOT EXISTS idx_links_category ON links(category);
+
+-- Reporting / admin query support
+CREATE INDEX IF NOT EXISTS idx_practices_user_id ON practices (user_id);
+CREATE INDEX IF NOT EXISTS idx_practices_session_id ON practices (practice_session_id);
+CREATE INDEX IF NOT EXISTS idx_practice_sessions_date ON practice_sessions (date);
+CREATE INDEX IF NOT EXISTS idx_attendances_event_id ON attendances (event_id);
+CREATE INDEX IF NOT EXISTS idx_attendances_user_id ON attendances (user_id);

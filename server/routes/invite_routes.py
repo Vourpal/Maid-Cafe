@@ -1,10 +1,12 @@
 from flask import Blueprint, request
 from models import InviteCreate
+from queries.audit_queries import record_audit
 from queries.invite_queries import (
     create_invite,
     delete_invite,
     get_invites,
 )
+from queries.user_queries import get_me
 from middleware import require_admin
 from utils import APIError, success_response, get_db
 
@@ -23,6 +25,16 @@ def create_new_invite(user_id):
             created_by=user_id,
             max_uses=invite_data.max_uses,
             expires_at=invite_data.expires_at,
+        )
+
+        record_audit(
+            cur,
+            actor_id=user_id,
+            actor=get_me(cur, user_id),
+            action="create",
+            entity_type="invite",
+            entity_id=invite["id"],
+            summary=f"Generated invite {invite['code']} ({invite_data.max_uses} use(s))",
         )
 
         return success_response(invite, 201)
@@ -48,5 +60,15 @@ def remove_invite(user_id, invite_id):
                 f"Invite {invite_id} does not exist",
                 404,
             )
+
+        record_audit(
+            cur,
+            actor_id=user_id,
+            actor=get_me(cur, user_id),
+            action="delete",
+            entity_type="invite",
+            entity_id=invite_id,
+            summary=f"Revoked invite {invite_id}",
+        )
 
         return success_response({"deleted": deleted}, 200)

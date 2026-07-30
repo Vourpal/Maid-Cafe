@@ -3,13 +3,16 @@ from flask_cors import CORS
 import traceback
 import os
 from utils import APIError
+from routes.admin_routes import admin_bp
 from routes.auth_routes import auth_bp
 from routes.user_routes import user_bp
 from routes.event_routes import event_bp
 from routes.attendance_routes import attendance_bp
+from routes.export_routes import export_bp
 from routes.practice_routes import practice_bp
 from routes.invite_routes import invite_bp
 from routes.link_routes import link_bp
+from routes.task_routes import task_bp
 
 print("PORT:", os.getenv("PORT"))
 
@@ -28,6 +31,9 @@ app.register_blueprint(attendance_bp)
 app.register_blueprint(practice_bp)
 app.register_blueprint(invite_bp)
 app.register_blueprint(link_bp)
+app.register_blueprint(admin_bp)
+app.register_blueprint(task_bp)
+app.register_blueprint(export_bp)
 
 
 # Error handlers

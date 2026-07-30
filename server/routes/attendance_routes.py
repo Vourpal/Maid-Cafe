@@ -9,7 +9,9 @@ from queries.attendance_queries import (
     post_attendance,
     update_attendance,
 )
-from models import NewAttendance, UpdatedAttendance
+from queries.audit_queries import diff_changes, record_audit
+from queries.user_queries import get_me
+from models import AdminAttendanceUpdate, NewAttendance, UpdatedAttendance
 from middleware import require_auth
 from utils import APIError, success_response, get_db
 
@@ -54,13 +56,27 @@ def attendance_detail(user_id, attendance_id):
         attendance = get_attendance_by_id(cur, attendance_id)
         if attendance is None:
             raise APIError("ATTENDANCE_NOT_FOUND", f"Attendance {attendance_id} does not exist", 404)
-        if attendance.user_id != user_id:
+
+        is_owner = attendance.user_id == user_id
+        current_user = get_me(cur, user_id)
+        if current_user is None:
+            raise APIError("UNAUTHORIZED", "Invalid token", 401)
+
+        # Admins can correct or remove anybody's RSVP — fixing a wrong sign-up,
+        # reassigning a driver, or clearing a no-show is routine coordination work.
+        is_admin_override = current_user.admin and not is_owner
+        if not is_owner and not current_user.admin:
             raise APIError("FORBIDDEN", "Not your attendance", 403)
 
         if request.method == "PATCH":
             data = request.get_json()
             try:
-                attendance_data = UpdatedAttendance(**data)
+                # The admin model additionally allows editing notes.
+                attendance_data = (
+                    AdminAttendanceUpdate(**data)
+                    if is_admin_override
+                    else UpdatedAttendance(**data)
+                )
             except ValidationError as e:
                 raise APIError("VALIDATION_ERROR", str(e), 422)
 
@@ -98,12 +114,61 @@ def attendance_detail(user_id, attendance_id):
             edited_attendance = update_attendance(cur, attendance_id, attendance_data)
             if edited_attendance is None:
                 raise APIError("ATTENDANCE_NOT_FOUND", f"Attendance {attendance_id} does not exist", 404)
+
+            # Only overrides are logged; members editing their own RSVP is not
+            # an administrative action and would drown out the signal.
+            if is_admin_override:
+                requested = attendance_data.model_dump(exclude_unset=True)
+                before = {
+                    "status": attendance.status,
+                    "role": attendance.role,
+                    "seats_available": attendance.seats_available,
+                    "notes": attendance.notes,
+                }
+                after = {**before, **requested}
+                changes = diff_changes(before, after)
+
+                if changes:
+                    record_audit(
+                        cur,
+                        actor_id=user_id,
+                        actor=current_user,
+                        action="update",
+                        entity_type="attendance",
+                        entity_id=attendance_id,
+                        summary=(
+                            f"Overrode RSVP for user {attendance.user_id} on event "
+                            f"{attendance.event_id} ({', '.join(changes)})"
+                        ),
+                        changes=changes,
+                    )
+
             return success_response({"updated": edited_attendance}, 200)
 
         elif request.method == "DELETE":
             deleted = delete_attendance(cur, attendance_id)
             if deleted is None:
                 raise APIError("ATTENDANCE_NOT_FOUND", f"Attendance {attendance_id} does not exist", 404)
+
+            if is_admin_override:
+                record_audit(
+                    cur,
+                    actor_id=user_id,
+                    actor=current_user,
+                    action="delete",
+                    entity_type="attendance",
+                    entity_id=attendance_id,
+                    summary=(
+                        f"Removed RSVP for user {attendance.user_id} from event "
+                        f"{attendance.event_id}"
+                    ),
+                    changes={
+                        "status": attendance.status,
+                        "role": attendance.role,
+                        "seats_available": attendance.seats_available,
+                    },
+                )
+
             return success_response({"deleted": deleted}, 200)
 
 
