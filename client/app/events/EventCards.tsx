@@ -8,9 +8,11 @@ import EditAttendance from "./EditAttendance";
 import EditEvents from "./EditEvent";
 import SignUpModal from "./SignUpModal";
 import { Button } from "@/components/ui/button";
-import { authHeadersNoContent } from "@/lib/api";
+import { authHeadersNoContent, downloadCsv } from "@/lib/api";
 import EventInfo from "./EventInfo";
-import { MapPin, Users, CalendarDays } from "lucide-react";
+import EventRoster from "./EventRoster";
+import { MapPin, Users, CalendarDays, Download } from "lucide-react";
+import { toast } from "sonner";
 
 type EventCardProps = {
   initialEvents: Event[];
@@ -73,6 +75,7 @@ export default function EventCards({
   const [attendances, setAttendances] = useState<AttendanceRecord[]>([]);
   const [showMine, setShowMine] = useState(false);
   const [showFutureOnly, setShowFutureOnly] = useState(initialFutureOnly);
+  const [rosterEventId, setRosterEventId] = useState<number | null>(null);
   const { user, loading } = useUserAuthentication();
 
   // showMine is still client-side (it only hides events the user isn't attending,
@@ -111,6 +114,18 @@ export default function EventCards({
     );
 
     setAttendances(attendances.filter((a) => a.event_id !== eventId));
+  }
+
+  async function handleExportRoster(event: Event) {
+    try {
+      await downloadCsv(
+        `/exports/events/${event.id}/roster.csv`,
+        `roster-${event.id}.csv`,
+      );
+      toast.success("Roster downloaded");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Export failed");
+    }
   }
 
   if (loading) return null;
@@ -251,6 +266,23 @@ export default function EventCards({
                             statusProps={event.status}
                           />
                           <EventInfo eventIdProp={event.id} />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-rose-300 text-rose-500 hover:bg-rose-50 h-7 text-xs rounded-full"
+                            onClick={() => setRosterEventId(event.id)}
+                          >
+                            Manage Roster
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-gray-200 text-gray-500 hover:bg-gray-50 h-7 text-xs rounded-full"
+                            onClick={() => handleExportRoster(event)}
+                          >
+                            <Download className="w-3 h-3 mr-1" />
+                            CSV
+                          </Button>
                         </>
                       )}
                     </div>
@@ -260,6 +292,13 @@ export default function EventCards({
             );
           })}
         </div>
+      )}
+
+      {rosterEventId !== null && (
+        <EventRoster
+          eventId={rosterEventId}
+          onClose={() => setRosterEventId(null)}
+        />
       )}
     </div>
   );

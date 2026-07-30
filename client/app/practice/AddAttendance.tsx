@@ -43,8 +43,10 @@ export default function AddAttendance({ practiceId, onDone }: Props) {
       // USERS
       // ======================
       try {
+        // /users is paginated now, so ask for a page large enough to cover the
+        // whole roster and read the list out of the envelope.
         const usersRes = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/users`,
+          `${process.env.NEXT_PUBLIC_API_URL}/users?quantity=1000&sort=name`,
           {
             method: "GET",
             headers: authHeadersNoContent(),
@@ -53,9 +55,11 @@ export default function AddAttendance({ practiceId, onDone }: Props) {
 
         if (!usersRes.ok) throw new Error("Failed users fetch");
 
-        const usersJson: ApiResponse<User[]> = await usersRes.json();
+        const usersJson: ApiResponse<{ users: User[] }> = await usersRes.json();
 
-        users = Array.isArray(usersJson.data) ? usersJson.data : [];
+        users = Array.isArray(usersJson.data?.users)
+          ? usersJson.data.users
+          : [];
       } catch (err) {
         console.error("Users fetch failed:", err);
       }

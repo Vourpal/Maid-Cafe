@@ -3,7 +3,19 @@
 import Link from "next/link";
 import { useUserAuthentication } from "./UserAuthentication";
 import { useEffect, useState } from "react";
-import { ArrowRight, Sparkles, CalendarDays, Dumbbell, MapPin, Clock } from "lucide-react";
+import { toast } from "sonner";
+import {
+  ArrowRight,
+  Sparkles,
+  CalendarDays,
+  Check,
+  ClipboardList,
+  Dumbbell,
+  MapPin,
+  Clock,
+} from "lucide-react";
+import { apiFetch } from "@/lib/api";
+import type { Task } from "@/types/admin";
 
 type UpcomingEvent = {
   id: number;
@@ -24,6 +36,7 @@ export default function Home() {
   const { user, loading } = useUserAuthentication();
   const [nextEvent, setNextEvent] = useState<UpcomingEvent | null>(null);
   const [nextSession, setNextSession] = useState<UpcomingSession | null>(null);
+  const [myTasks, setMyTasks] = useState<Task[]>([]);
 
   // Fetch the single soonest upcoming event (public endpoint)
   useEffect(() => {
@@ -59,6 +72,29 @@ export default function Home() {
       })
       .catch(() => {});
   }, [user]);
+
+  // Tasks assigned to this member. Open ones only — the point is what is left
+  // to do, not a history.
+  useEffect(() => {
+    if (!user) return;
+    apiFetch<Task[]>("/tasks/me?completed=false")
+      .then(setMyTasks)
+      .catch(() => setMyTasks([]));
+  }, [user]);
+
+  async function completeTask(task: Task) {
+    setMyTasks((prev) => prev.filter((t) => t.id !== task.id));
+    try {
+      await apiFetch(`/tasks/${task.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ completed: true }),
+      });
+      toast.success(`Marked "${task.title}" complete`);
+    } catch (err) {
+      setMyTasks((prev) => [...prev, task]);
+      toast.error(err instanceof Error ? err.message : "Could not update task");
+    }
+  }
 
   return (
     <div className="px-4 py-8 max-w-4xl mx-auto space-y-6">
@@ -180,6 +216,74 @@ export default function Home() {
               )}
             </div>
           </Link>
+        </div>
+      )}
+
+      {/* My tasks */}
+      {user && !loading && myTasks.length > 0 && (
+        <div className="bg-white rounded-2xl border border-amber-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-amber-50 flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
+              <ClipboardList className="w-4 h-4 text-amber-500" />
+            </div>
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+              Your tasks
+            </span>
+            <span className="ml-auto text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+              {myTasks.length}
+            </span>
+          </div>
+
+          <div className="divide-y divide-amber-50">
+            {myTasks.map((task) => {
+              const overdue =
+                task.due_date && new Date(task.due_date) < new Date();
+
+              return (
+                <div key={task.id} className="px-5 py-3 flex items-start gap-3">
+                  <button
+                    onClick={() => completeTask(task)}
+                    className="mt-0.5 w-5 h-5 rounded-md border border-gray-300 hover:border-amber-500 hover:bg-amber-50 flex items-center justify-center shrink-0 transition"
+                    title="Mark complete"
+                  >
+                    <Check className="w-3 h-3 text-transparent hover:text-amber-500" />
+                  </button>
+
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-800">
+                      {task.title}
+                    </p>
+                    {task.description && (
+                      <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">
+                        {task.description}
+                      </p>
+                    )}
+                    <div className="flex flex-wrap gap-2 mt-1 text-xs">
+                      {task.due_date && (
+                        <span
+                          className={
+                            overdue ? "text-red-600 font-medium" : "text-gray-400"
+                          }
+                        >
+                          Due{" "}
+                          {new Date(task.due_date).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                          })}
+                          {overdue && " · overdue"}
+                        </span>
+                      )}
+                      {task.event_title && (
+                        <span className="text-purple-500 bg-purple-50 px-2 py-0.5 rounded-full">
+                          {task.event_title}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
